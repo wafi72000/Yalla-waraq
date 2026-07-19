@@ -44,7 +44,23 @@ if (state === "human-bidding") {
   check("فيه أزرار مزايدة معروضة لدور الإنسان", bidBtns.length > 0, true);
   bidBtns[bidBtns.length - 1].dispatchEvent(new window.Event("click", { bubbles: true }));
   await new Promise((r) => setTimeout(r, 200));
-  check("بعد مزايدة الإنسان، ما ظهر خطأ", document.getElementById("toast").classList.contains("show"), false);
+  // ملاحظة: توست AI (مثل "فهد: بس") طبيعي وقد يظهر بنفس التوقيت بالصدفة - نتحقق من نص التوست
+  // نفسه (لو ظاهر) يطابق رسالة خطأ حقيقية، بدل نعتبر أي توست ظاهر = خطأ
+  const toastText = document.getElementById("toast").textContent || "";
+  const looksLikeError = /مو دورك|انتهت بالفعل|صكّة ميتة|غير متاح|يتطلب إعلان|يجب يكون/.test(toastText);
+  check("بعد مزايدة الإنسان، ما ظهر خطأ حقيقي بالتوست", looksLikeError, false);
+
+  // لو مزايدة الإنسان أنهت حكم معلّق (بس منه)، ممكن يفتح دور الإنسان بمزايدة الدبل (مو AI) - نكمّل بالضغط على "ابدأ اللعب"
+  await new Promise((r) => setTimeout(r, 300));
+  const doublingVisible = !document.getElementById("doublingBar").classList.contains("hidden");
+  const sunDoublingVisible = !document.getElementById("sunDoublingBar").classList.contains("hidden");
+  if (doublingVisible) {
+    const proceedBtn = [...document.querySelectorAll("#doublingChoices .double-btn")].find((b) => b.textContent.includes("ابدأ اللعب"));
+    proceedBtn?.dispatchEvent(new window.Event("click", { bubbles: true }));
+  } else if (sunDoublingVisible) {
+    const normalBtn = [...document.querySelectorAll("#sunDoublingChoices .double-btn")].find((b) => b.textContent.includes("لعب عادي"));
+    normalBtn?.dispatchEvent(new window.Event("click", { bubbles: true }));
+  }
 } else if (state === "playing") {
   check("مرحلة اللعب وصلت بنجاح", true, true);
 } else if (state === "dead") {

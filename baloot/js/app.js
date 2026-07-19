@@ -413,13 +413,14 @@ function applyDynamicCardSize(row, cardCount) {
   row.dataset.cardStep = String(step);
 }
 
+const handCardElements = new Map(); // card.id -> DOM element - يُعاد استخدامها بين الرندرات، ما تُهدم إلا لو الورقة خرجت فعلياً من اليد
+
 function renderHand() {
   const isMyTurnNow = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
   $("yourTurnBanner").classList.toggle("hidden", !isMyTurnNow);
 
   const row = $("handRow");
-  row.innerHTML = "";
-  if (!match.hands.has(HUMAN_ID)) return;
+  if (!match.hands.has(HUMAN_ID)) { row.innerHTML = ""; handCardElements.clear(); return; }
   const hand = [...match.hands.get(HUMAN_ID)].sort((a, b) => {
     if (a.suit !== b.suit) return a.suit.localeCompare(b.suit);
     return b.rank - a.rank;
@@ -427,20 +428,33 @@ function renderHand() {
 
   applyDynamicCardSize(row, hand.length);
   const step = Number(row.dataset.cardStep) || FIXED_CARD_WIDTH;
-
   const isMyTurn = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
+
+  // نحذف من الكاش أي ورقة ما عادت موجودة بيدّك (اتلعبت) - عنصرها يُهدم فعلياً
+  const currentIds = new Set(hand.map((c) => c.id));
+  for (const [id, el] of handCardElements) {
+    if (!currentIds.has(id)) { el.remove(); handCardElements.delete(id); }
+  }
+
   hand.forEach((card, index) => {
-    const el = cardDisplay(card);
-    if (index > 0) el.style.marginInlineStart = `${step - FIXED_CARD_WIDTH}px`; // سالب = تراكب جزئي، موجب/صفر = مسافة عادية
-    el.style.zIndex = String(hand.length - index); // كل ورقة تغطّي يمين التالية (مو يسارها) - يبقى رمز كل ورقة (أعلى يسارها) ظاهر
-    if (!isMyTurn) {
-      el.classList.add("not-playable"); // مو دورك - ما يصير تضغط عليها، بس تبقى بلونها الطبيعي (بدون تظليل)
-    } else if (!isCardLegalForHuman(card)) {
-      el.classList.add("not-playable", "illegal"); // بدورك فعلاً، بس هذي الورقة ممنوعة (قانون اتباع اللون مثلاً) - تتظلّل
+    let el = handCardElements.get(card.id);
+    if (!el) {
+      el = cardDisplay(card); // ورقة جديدة فعلياً بيدّك (توزيع جديد) - عنصر جديد مرة وحدة بس
+      handCardElements.set(card.id, el);
     } else {
-      el.addEventListener("click", () => onHumanPlayCard(card));
+      el.className = "card card-image"; // نصفّر الفئات (not-playable/illegal القديمة) قبل نعيد تطبيقها بالأسفل - العنصر نفسه والصورة تبقى بدون إعادة تحميل
     }
-    row.appendChild(el);
+    el.style.marginInlineStart = index > 0 ? `${step - FIXED_CARD_WIDTH}px` : "0";
+    el.style.zIndex = String(hand.length - index); // كل ورقة تغطّي يمين التالية (مو يسارها) - يبقى رمز كل ورقة (أعلى يسارها) ظاهر
+    el.onclick = null; // نمسح أي مستمع سابق (لو كانت الورقة قابلة للعب بالرندر الماضي) قبل نقرر من جديد
+    if (!isMyTurn) {
+      el.classList.add("not-playable");
+    } else if (!isCardLegalForHuman(card)) {
+      el.classList.add("not-playable", "illegal");
+    } else {
+      el.onclick = () => onHumanPlayCard(card);
+    }
+    row.appendChild(el); // appendChild لعنصر موجود أصلاً بس ينقل ترتيبه - ما يهدمه ولا يعيد تحميل الصورة
   });
 }
 
