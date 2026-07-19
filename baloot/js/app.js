@@ -344,20 +344,26 @@ function renderSunDoublingBar() {
 let balootAnnounceActive = false;
 
 const CARD_ASPECT_RATIO = 84 / 58; // نفس نسبة أبعاد صور الورق الحقيقية - نحافظ عليها دايماً عشان ما تنعصر الرسمة
-const MAX_CARD_WIDTH = 80;
-const MIN_CARD_WIDTH = 34;
+const FIXED_CARD_WIDTH = 80; // حجم ثابت كبير دايماً - ما نصغّر الورقة نفسها أبداً، نتحكم بالتراكب بدلها
 const HAND_GAP = 3;
 
-/// يحسب حجم الورق ديناميكياً عشان يتناسب دايماً بصف واحد بس، بغض النظر عن عدد الورق أو عرض الشاشة
+/// يحسب تراكب الورق (لو لزم) عشان يتناسب دايماً بصف واحد بحجم كبير ثابت، بدل تصغير كل ورقة
+/// نفس فكرة اللعب الحقيقي: يد فيها ورق كثير تتراكب جزئياً، بدل ما تصغر كل ورقة لدرجة يصعب تمييزها
 function applyDynamicCardSize(row, cardCount) {
   if (cardCount === 0) return;
   const containerWidth = row.parentElement?.clientWidth || row.clientWidth || window.innerWidth - 16;
-  const totalGap = HAND_GAP * Math.max(cardCount - 1, 0);
-  const available = containerWidth - totalGap;
-  const width = Math.max(MIN_CARD_WIDTH, Math.min(MAX_CARD_WIDTH, Math.floor(available / cardCount)));
-  const height = Math.round(width * CARD_ASPECT_RATIO);
-  row.style.setProperty("--dynamic-card-w", `${width}px`);
+  const height = Math.round(FIXED_CARD_WIDTH * CARD_ASPECT_RATIO);
+  row.style.setProperty("--dynamic-card-w", `${FIXED_CARD_WIDTH}px`);
   row.style.setProperty("--dynamic-card-h", `${height}px`);
+
+  if (cardCount <= 1) {
+    row.dataset.cardStep = String(FIXED_CARD_WIDTH);
+    return;
+  }
+  const desiredStep = FIXED_CARD_WIDTH + HAND_GAP; // المسافة المفضّلة بين بداية كل ورقة والثانية (بدون تراكب)
+  const maxAllowedStep = (containerWidth - FIXED_CARD_WIDTH) / (cardCount - 1);
+  const step = Math.max(20, Math.min(desiredStep, maxAllowedStep)); // 20px حد أدنى - يبقى جزء من كل ورقة ظاهر دايماً
+  row.dataset.cardStep = String(step);
 }
 
 function renderHand() {
@@ -373,10 +379,12 @@ function renderHand() {
   });
 
   applyDynamicCardSize(row, hand.length);
+  const step = Number(row.dataset.cardStep) || FIXED_CARD_WIDTH;
 
   const isMyTurn = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
-  for (const card of hand) {
+  hand.forEach((card, index) => {
     const el = cardDisplay(card);
+    if (index > 0) el.style.marginInlineStart = `${step - FIXED_CARD_WIDTH}px`; // سالب = تراكب جزئي، موجب/صفر = مسافة عادية
     if (!isMyTurn) {
       el.classList.add("not-playable"); // مو دورك - ما يصير تضغط عليها، بس تبقى بلونها الطبيعي (بدون تظليل)
     } else if (!isCardLegalForHuman(card)) {
@@ -385,7 +393,7 @@ function renderHand() {
       el.addEventListener("click", () => onHumanPlayCard(card));
     }
     row.appendChild(el);
-  }
+  });
 }
 
 function isCardLegalForHuman(card) {
