@@ -59,6 +59,7 @@ export class BalootMatch {
     this.sunDoubling = null;
     this.tricksWon = []; // [{playerID, cards}]
     this.currentTrick = []; // [{playerID, card}] الشوط الجاري
+    this.completedTrick = null; // شوط اكتمل (4 ورق) بس لسه ينتظر الواجهة تعرضه قبل ما ينكسح
     this.projectsAnnounced = new Map(); // playerID -> project object (بعد الكشف الفعلي)
     this.handResult = null;
     this.projectsResolved = false; // يُصفّر كل يد جديدة - يضمن resolveProjects تُستدعى مرة وحدة بالوقت الصحيح
@@ -231,6 +232,7 @@ export class BalootMatch {
 
   playCard(playerID, card, isBalootPressed = false) {
     if (this.phase !== "playing") throw new HandRuleError("مو وقت اللعب الحين");
+    if (this.completedTrick) throw new HandRuleError("لسه ما انكسح الشوط السابق - انتظر");
     if (playerID !== this.turnPlayerID) throw new HandRuleError("مو دورك");
 
     const hand = this.hands.get(playerID);
@@ -251,6 +253,9 @@ export class BalootMatch {
         cards: this.currentTrick.map((e) => e.card),
         plays: this.currentTrick.map((e) => ({ playerID: e.playerID, card: e.card })), // تفصيل مين رمى وش بالضبط - يفيد تتبع الفراغات
       });
+      // لا نصفّر currentTrick هنا فوراً - نخليه ظاهر (completedTrick) حتى تستدعي الواجهة clearCompletedTrick()
+      // بعد وقفة كافية (2-3 ثواني) يشوف فيها كل اللاعبين الشوط كامل قبل ما ينكسح
+      this.completedTrick = this.currentTrick;
       this.currentTrick = [];
       this.turnPlayerID = winnerID; // الفائز بالشوط يبدأ اللي بعده
 
@@ -265,6 +270,11 @@ export class BalootMatch {
     const seatIdx = this.baseSeatOrder.indexOf(playerID);
     this.turnPlayerID = this.baseSeatOrder[(seatIdx + 1) % 4];
     return { trickComplete: false };
+  }
+
+  /// تُستدعى من الواجهة بعد وقفة كافية لعرض الشوط المكتمل - تصفّر completedTrick فعلياً
+  clearCompletedTrick() {
+    this.completedTrick = null;
   }
 
   _finishHand() {

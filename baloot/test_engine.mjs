@@ -23,6 +23,10 @@ function freshMatch() {
 /// يلعب يد كاملة بأبسط طريقة ممكنة: كل لاعب يرمي أول ورقة صالحة بيده (يضمن نجاح اللعبة ميكانيكياً بدون استراتيجية)
 function playFullHandAutomatically(match) {
   while (match.phase === "playing") {
+    if (match.completedTrick) {
+      match.clearCompletedTrick(); // الاختبار الآلي "يشوف" الشوط فوراً ويكمل - ما يحتاج وقفة حقيقية
+      continue;
+    }
     const playerID = match.turnPlayerID;
     const hand = match.hands.get(playerID);
     let played = false;
@@ -302,6 +306,46 @@ function buyHukmAndFinalize(match, buyerID) {
 
   playFullHandAutomatically(match);
   check("اليد اكتملت مع دبل الصن الفعّال", match.phase, "handOver");
+}
+
+// ===== إصلاح مهم: الشوط المكتمل يبقى ظاهر (completedTrick) - ما ينكسح فوراً، ولعب جديد يُرفض حتى يُكسح صراحة =====
+{
+  const match = freshMatch();
+  const order = match.currentSeatOrder;
+  match.submitBid(order[0], BidChoice.PASS);
+  match.submitBid(order[1], BidChoice.PASS);
+  match.submitBid(order[2], BidChoice.SUN);
+  match.resolveProjects();
+
+  // نلعب أول شوط كامل يدوياً (بدون استخدام playFullHandAutomatically عشان نلاحظ اللحظة بالضبط)
+  for (let i = 0; i < 4; i++) {
+    const playerID = match.turnPlayerID;
+    if (match.completedTrick) break; // ما يفترض يصير بعد أقل من 4 ورق
+    const hand = match.hands.get(playerID);
+    for (const card of [...hand]) {
+      try { match.playCard(playerID, card); break; } catch (e) { continue; }
+    }
+  }
+
+  check("بعد اكتمال أول شوط (4 ورق)، completedTrick معبّى بـ4 عناصر", match.completedTrick?.length, 4);
+  check("currentTrick صفر (فُرِّغ فوراً لبدء الشوط الجاي لاحقاً)", match.currentTrick.length, 0);
+
+  const winnerAfterTrick = match.turnPlayerID;
+  const hand = match.hands.get(winnerAfterTrick);
+  checkThrows("محاولة لعب ورقة جديدة قبل تكسيح الشوط المكتمل تُرفض", () => {
+    match.playCard(winnerAfterTrick, hand[0]);
+  });
+
+  match.clearCompletedTrick();
+  check("بعد التكسيح الصريح، completedTrick يصير null", match.completedTrick, null);
+
+  // الآن اللعب يكمل عادي
+  try {
+    match.playCard(winnerAfterTrick, match.hands.get(winnerAfterTrick)[0]);
+    check("بعد التكسيح، اللعب يستمر بنجاح", true, true);
+  } catch (e) {
+    check("بعد التكسيح، اللعب يستمر بنجاح - " + e.message, false, true);
+  }
 }
 
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);

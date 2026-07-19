@@ -142,7 +142,8 @@ function renderCenterArea() {
   const trickZone = $("trickZone");
   trickZone.innerHTML = "";
   if (match.phase === "playing" || match.phase === "doubling") {
-    for (const entry of match.currentTrick ?? []) {
+    const cardsToShow = match.completedTrick ?? match.currentTrick ?? [];
+    for (const entry of cardsToShow) {
       const el = cardDisplay(entry.card);
       el.classList.add("trick-card", `pos-${SEAT_TRICK_POS[entry.playerID]}`);
       trickZone.appendChild(el);
@@ -150,7 +151,9 @@ function renderCenterArea() {
   }
 
   const turnIndicator = $("turnIndicator");
-  if (match.phase === "playing") {
+  if (match.completedTrick) {
+    turnIndicator.textContent = `${displayName(match.turnPlayerID)} أخذ الشوط`;
+  } else if (match.phase === "playing") {
     turnIndicator.textContent = match.turnPlayerID === HUMAN_ID ? "دورك" : `دور ${displayName(match.turnPlayerID)}`;
   } else if (match.phase === "bidding" && !match.bidding.isDead) {
     turnIndicator.textContent = match.bidding.currentPlayerID === HUMAN_ID ? "دورك بالمزايدة" : `مزايدة ${displayName(match.bidding.currentPlayerID)}`;
@@ -520,10 +523,22 @@ $("newMatchBtn").addEventListener("click", newMatch);
 $("scoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.remove("hidden"));
 $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.add("hidden"));
 
+const TRICK_PAUSE_MS = 2500; // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح
+
 function afterAction() {
   render();
   if (match.phase === "playing" && match.tricksWon.length === 0 && !match.projectsResolved) {
     match.resolveProjects();
+  }
+  if (match.completedTrick) {
+    // شوط اكتمل للتو - ننتظر وقفة واضحة قبل ما نكسحه ونكمل اللعب، عشان كل لاعب يشوف الأربع ورقات كاملة
+    setTimeout(() => {
+      if (!match || !match.completedTrick) return; // احتياط لو تغيّرت الحالة بطريقة ثانية بالأثناء
+      match.clearCompletedTrick();
+      render();
+      maybeRunAI();
+    }, TRICK_PAUSE_MS);
+    return;
   }
   maybeRunAI();
 }
@@ -543,6 +558,7 @@ function announceAIBid(playerID, choice, round) {
 
 function maybeRunAI() {
   if (!match || match.matchOver) return;
+  if (match.completedTrick) return; // شوط لسه ينتظر يُكسح - ننتظر afterAction تتولى الوقفة والاستمرار
 
   if (match.phase === "bidding" && !match.bidding.isDead) {
     const current = match.bidding.currentPlayerID;
@@ -644,7 +660,7 @@ function maybeRunAI() {
         }
       }
       afterAction();
-    }, 700);
+    }, 1200);
     return;
   }
 }
