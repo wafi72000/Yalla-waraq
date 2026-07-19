@@ -160,7 +160,11 @@ function renderBiddingBar() {
     return;
   }
   bar.classList.remove("hidden");
-  $("biddingTitle").textContent = `المزايدة (الجولة ${match.bidding.round}) — الورقة المفروشة: ${SUIT_SYMBOL[match.flippedCard.suit]}`;
+  const pending = match.bidding.pendingHukm;
+  const pendingText = pending
+    ? ` — حالياً معلّق: ${displayName(pending.buyerID)} اشترى حكم (${SUIT_SYMBOL[pending.trumpSuit]}) — تقدر ترفعها بصن/اشكل`
+    : "";
+  $("biddingTitle").textContent = `المزايدة (الجولة ${match.bidding.round}) — الورقة المفروشة: ${SUIT_SYMBOL[match.flippedCard.suit]}${pendingText}`;
 
   const choices = match.bidding.availableChoices();
   const choicesEl = $("biddingChoices");
@@ -454,6 +458,16 @@ function afterAction() {
 
 // ===== حلقة الذكاء الاصطناعي =====
 
+function announceAIBid(playerID, choice) {
+  const name = displayName(playerID);
+  if (choice === BidChoice.PASS) {
+    showToast(`${name}: ${match.bidding?.round === 2 ? "ولا" : "بس"}`);
+    return;
+  }
+  const labels = { [BidChoice.SUN]: "صن", [BidChoice.ASHKAL]: "اشكل", [BidChoice.HUKM]: "حكم" };
+  showToast(`${name} اشترى ${labels[choice]}!`);
+}
+
 function maybeRunAI() {
   if (!match || match.matchOver) return;
 
@@ -468,6 +482,7 @@ function maybeRunAI() {
         const decision = aiDecideBid(hand, choices, flippedSuit, match.bidding.round);
         try {
           match.submitBid(current, decision.choice, decision.trumpSuitForHukm);
+          announceAIBid(current, decision.choice);
         } catch (e) {
           try { match.submitBid(current, BidChoice.PASS); } catch (e2) { console.error("[AI bid]", e2); }
         }

@@ -1,4 +1,9 @@
 // bidding.js — منطق المزايدة: جولتين، ترتيب الدور، صلاحيات كل مقعد، الصكّة الميتة
+//
+// قاعدة مهمة (الجولة الأولى فقط): شراء "حكم" لا يوقف المزايدة فوراً - يصير "معلّق" (pending)،
+// والدور يكمل لبقية اللاعبين بنفس الجولة. أي لاعب لاحق يقدر "يرفعها" لصن/اشكل (يلغي الحكم المعلّق
+// ويقفل فوراً)، أو يشتري حكم جديد (يستبدل المعلّق السابق)، أو يمرر. لو انتهت الجولة وحكم معلّق موجود
+// بدون ما يُلغى، يصير هو المشتري النهائي. الصن والإشكال يقفلون المزايدة فوراً دائماً، بكلتا الجولتين.
 
 import { HandRuleError } from "./deal.js";
 
@@ -17,8 +22,9 @@ export class BiddingState {
     this.flippedSuit = flippedSuit;
     this.round = 1; // 1 أو 2
     this.turnIndex = 0;
-    this.result = null; // { buyerID, choice, trumpSuit } بعد الشراء، أو null لسه
+    this.result = null; // { buyerID, choice, trumpSuit, isAshkal } بعد الشراء النهائي، أو null لسه
     this.isDead = false; // صكّة ميتة (مرّت الجولتان بدون شراء)
+    this.pendingHukm = null; // { buyerID, trumpSuit } - حكم معلّق بالجولة الأولى، لسه ما انقفل
   }
 
   get currentPlayerID() {
@@ -33,9 +39,7 @@ export class BiddingState {
 
   /// الخيارات المتاحة للاعب الحالي بالجولة الحالية
   availableChoices() {
-    const base = this.round === 1
-      ? [BidChoice.HUKM, BidChoice.SUN, BidChoice.PASS]
-      : [BidChoice.HUKM, BidChoice.SUN, BidChoice.PASS];
+    const base = [BidChoice.HUKM, BidChoice.SUN, BidChoice.PASS];
     if (this.round === 1 && this.isEligibleForAshkal(this.currentPlayerID)) {
       return [BidChoice.HUKM, BidChoice.SUN, BidChoice.ASHKAL, BidChoice.PASS];
     }
@@ -55,37 +59,50 @@ export class BiddingState {
 
     if (choice === BidChoice.PASS) {
       this._advanceTurn();
-      return null;
+      return this.result; // قد يكون null، أو النتيجة النهائية لو انتهت الجولة وحكم معلّق تحوّل لمشتري نهائي
     }
 
-    // تحديد لون الحكم النهائي
-    let trumpSuit = null;
     if (choice === BidChoice.HUKM) {
+      const trumpSuit = this._resolveHukmSuit(trumpSuitForHukm);
       if (this.round === 1) {
-        trumpSuit = this.flippedSuit; // حكم أول = نفس لون المفروشة
-      } else {
-        if (!trumpSuitForHukm) throw new HandRuleError("حكم ثاني يتطلب إعلان صريح عن اللون");
-        if (trumpSuitForHukm === this.flippedSuit) {
-          throw new HandRuleError("حكم ثاني يجب يكون بلون غير لون الورقة المفروشة");
-        }
-        trumpSuit = trumpSuitForHukm;
+        // حكم بالجولة الأولى: يصير معلّق فقط، ما يقفل المزايدة - الدور يكمل لبقية اللاعبين بنفس الجولة
+        this.pendingHukm = { buyerID: playerID, trumpSuit };
+        this._advanceTurn();
+        return null;
       }
+      // حكم بالجولة الثانية: يقفل فوراً زي المعتاد
+      this._finalize(playerID, BidChoice.HUKM, trumpSuit, false);
+      return this.result;
     }
-    // صن/اشكل: trumpSuit تبقى null (لا يوجد لون حكم)
 
-    this.result = {
-      buyerID: playerID,
-      choice,
-      trumpSuit,
-      isAshkal: choice === BidChoice.ASHKAL,
-    };
+    // صن أو اشكل: يقفل المزايدة فوراً دايماً (يلغي أي حكم معلّق لو موجود)
+    this._finalize(playerID, choice, null, choice === BidChoice.ASHKAL);
     return this.result;
+  }
+
+  _resolveHukmSuit(trumpSuitForHukm) {
+    if (this.round === 1) return this.flippedSuit; // حكم أول = نفس لون المفروشة
+    if (!trumpSuitForHukm) throw new HandRuleError("حكم ثاني يتطلب إعلان صريح عن اللون");
+    if (trumpSuitForHukm === this.flippedSuit) {
+      throw new HandRuleError("حكم ثاني يجب يكون بلون غير لون الورقة المفروشة");
+    }
+    return trumpSuitForHukm;
+  }
+
+  _finalize(buyerID, choice, trumpSuit, isAshkal) {
+    this.result = { buyerID, choice, trumpSuit, isAshkal };
+    this.pendingHukm = null;
   }
 
   _advanceTurn() {
     this.turnIndex += 1;
     if (this.turnIndex >= this.seatOrder.length) {
       if (this.round === 1) {
+        if (this.pendingHukm) {
+          // انتهت الجولة الأولى وفيه حكم معلّق ما انلغى - يصير هو المشتري النهائي
+          this._finalize(this.pendingHukm.buyerID, BidChoice.HUKM, this.pendingHukm.trumpSuit, false);
+          return;
+        }
         this.round = 2;
         this.turnIndex = 0;
       } else {

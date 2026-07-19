@@ -39,6 +39,18 @@ function playFullHandAutomatically(match) {
   }
 }
 
+/// يشتري حكم أول عبر لاعب معيّن، ويكمّل الجولة بالباقين "بس" - يضمن الحكم يصير المشتري النهائي فعلياً
+/// (القاعدة الجديدة: حكم بالجولة الأولى يصير معلّق، ما يقفل المزايدة فوراً)
+function buyHukmAndFinalize(match, buyerID) {
+  const order = match.currentSeatOrder;
+  const buyerIdx = order.indexOf(buyerID);
+  match.submitBid(buyerID, BidChoice.HUKM);
+  for (let i = 1; i < order.length; i++) {
+    const id = order[(buyerIdx + i) % order.length];
+    match.submitBid(id, BidChoice.PASS);
+  }
+}
+
 // ===== يد كاملة: توزيع → مزايدة (صن) → لعب 8 أشواط → حساب =====
 {
   const match = freshMatch();
@@ -83,8 +95,12 @@ function playFullHandAutomatically(match) {
 {
   const match = freshMatch();
   const order = match.currentSeatOrder;
-  match.submitBid(order[0], BidChoice.HUKM); // حكم أول
-  check("شراء الحكم يفتح مرحلة الدبل (مش لعب مباشرة)", match.phase, "doubling");
+  match.submitBid(order[0], BidChoice.HUKM); // حكم أول - معلّق فقط الآن، ما يقفل المزايدة فوراً
+  check("المزايدة لسه مستمرة (حكم معلّق، مش نهائي بعد)", match.phase, "bidding");
+  match.submitBid(order[1], BidChoice.PASS);
+  match.submitBid(order[2], BidChoice.PASS);
+  match.submitBid(order[3], BidChoice.PASS); // آخر لاعب - الحكم المعلّق يصير نهائي
+  check("شراء الحكم يفتح مرحلة الدبل بعد اكتمال الجولة", match.phase, "doubling");
   check("isHukm = true", match.isHukm, true);
 
   match.proceedToPlay();
@@ -95,7 +111,7 @@ function playFullHandAutomatically(match) {
 {
   const match = freshMatch();
   const order = match.currentSeatOrder;
-  match.submitBid(order[0], BidChoice.HUKM);
+  buyHukmAndFinalize(match, order[0]);
   const buyerTeam = match.buyerTeam;
   const opponentTeam = match.opponentTeam;
 
@@ -157,7 +173,7 @@ function playFullHandAutomatically(match) {
   const match = freshMatch();
   const order = match.currentSeatOrder;
   const buyerID = order[0];
-  match.submitBid(buyerID, BidChoice.HUKM);
+  buyHukmAndFinalize(match, buyerID);
 
   // نضمن المشتري يملك K+Q من الحكم (بدل الاعتماد على حظ التوزيع) - نحقنهم يدوياً بيده
   const trumpSuit = match.trumpSuit;
@@ -180,7 +196,7 @@ function playFullHandAutomatically(match) {
   const match = freshMatch();
   const order = match.currentSeatOrder;
   const buyerID = order[0];
-  match.submitBid(buyerID, BidChoice.HUKM);
+  buyHukmAndFinalize(match, buyerID);
 
   const trumpSuit = match.trumpSuit;
   const buyerHand = match.hands.get(buyerID);
@@ -249,7 +265,7 @@ function playFullHandAutomatically(match) {
 {
   const match = freshMatch();
   const order = match.currentSeatOrder;
-  match.submitBid(order[0], BidChoice.HUKM);
+  buyHukmAndFinalize(match, order[0]);
   check("رصيد المشتري صفر قبل أي يد", match.cumulativeScores[match.buyerTeam], 0);
 
   match.requestDouble(match.opponentTeam); // دبل
