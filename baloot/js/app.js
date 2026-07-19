@@ -5,6 +5,7 @@ import { Suit, Rank, rankDisplayName } from "./models.js";
 import { ProjectType } from "./projects.js";
 import { aiDecideBid, aiChooseCard, aiDecideDouble } from "./ai.js";
 import { computeRawCardPoints } from "./scoring.js";
+import { speak, BID_SPEECH } from "./speech.js";
 
 const HUMAN_ID = "human";
 // ترتيب فيزيائي بعقارب الساعة: أنت(أسفل) -> سالم(يسار) -> خالد(فوق، شريكك) -> فهد(يمين) -> رجوع لك
@@ -48,6 +49,15 @@ function displayName(id) {
   return names[id] ?? id;
 }
 
+/// ينطق "أول" أو "ثاني" أول ما تبدأ/تنتقل جولة مزايدة جديدة - مرة وحدة بس لكل جولة (يتتبع آخر جولة نُطقت)
+function announceBiddingRoundIfNew() {
+  if (!match || match.phase !== "bidding" || match.bidding.isDead) return;
+  const round = match.bidding.round;
+  if (match._lastSpokenRound === round) return;
+  match._lastSpokenRound = round;
+  speak(round === 1 ? BID_SPEECH.ROUND_FIRST : BID_SPEECH.ROUND_SECOND);
+}
+
 function newMatch() {
   match = new BalootMatch(baseSeatOrder, teamOfPlayer);
   balootAnnounceActive = false;
@@ -78,6 +88,7 @@ function render() {
   renderHand();
   renderBalootButton();
   renderOverlays();
+  announceBiddingRoundIfNew();
 }
 
 function renderScores() {
@@ -199,9 +210,22 @@ function onHumanBid(choice) {
   submitHumanBid(choice, null);
 }
 
+/// ينطق قرار مزايدة معيّن، مراعياً الفرق حسب الجولة (حكم أول/ثاني، بس/ولا)
+function speakBidChoice(choice, round) {
+  const map = {
+    [BidChoice.SUN]: BID_SPEECH.SUN,
+    [BidChoice.ASHKAL]: BID_SPEECH.ASHKAL,
+    [BidChoice.HUKM]: round === 1 ? BID_SPEECH.HUKM_FIRST : BID_SPEECH.HUKM_SECOND,
+    [BidChoice.PASS]: round === 1 ? BID_SPEECH.PASS_ROUND1 : BID_SPEECH.PASS_ROUND2,
+  };
+  speak(map[choice] ?? "");
+}
+
 function submitHumanBid(choice, trumpSuitForHukm) {
   try {
+    const round = match.bidding.round;
     match.submitBid(HUMAN_ID, choice, trumpSuitForHukm);
+    speakBidChoice(choice, round);
     afterAction();
   } catch (e) {
     showToast(e.message);
@@ -238,6 +262,7 @@ function renderDoublingBar() {
     nextBtn.addEventListener("click", () => {
       try {
         match.requestDouble(humanTeam);
+        speak(nextLabel.replace(/\s*\(.*\)/, ""));
         afterAction();
       } catch (e) {
         showToast(e.message);
@@ -441,6 +466,7 @@ $("startMatchBtn").addEventListener("click", newMatch);
 $("nextHandBtn").addEventListener("click", () => {
   balootAnnounceActive = false;
   match.advanceToNextHand();
+  match._lastSpokenRound = null;
   render();
   maybeRunAI();
 });
@@ -458,10 +484,11 @@ function afterAction() {
 
 // ===== حلقة الذكاء الاصطناعي =====
 
-function announceAIBid(playerID, choice) {
+function announceAIBid(playerID, choice, round) {
   const name = displayName(playerID);
+  speakBidChoice(choice, round);
   if (choice === BidChoice.PASS) {
-    showToast(`${name}: ${match.bidding?.round === 2 ? "ولا" : "بس"}`);
+    showToast(`${name}: ${round === 2 ? "ولا" : "بس"}`);
     return;
   }
   const labels = { [BidChoice.SUN]: "صن", [BidChoice.ASHKAL]: "اشكل", [BidChoice.HUKM]: "حكم" };
@@ -480,9 +507,10 @@ function maybeRunAI() {
         const choices = match.bidding.availableChoices();
         const flippedSuit = match.flippedCard.suit;
         const decision = aiDecideBid(hand, choices, flippedSuit, match.bidding.round);
+        const roundBefore = match.bidding.round;
         try {
           match.submitBid(current, decision.choice, decision.trumpSuitForHukm);
-          announceAIBid(current, decision.choice);
+          announceAIBid(current, decision.choice, roundBefore);
         } catch (e) {
           try { match.submitBid(current, BidChoice.PASS); } catch (e2) { console.error("[AI bid]", e2); }
         }
@@ -495,6 +523,7 @@ function maybeRunAI() {
   if (match.bidding?.isDead && match.phase === "dead") {
     setTimeout(() => {
       match.advanceToNextHand();
+      match._lastSpokenRound = null;
       render();
       maybeRunAI();
     }, 1200);
@@ -514,7 +543,10 @@ function maybeRunAI() {
         const wantsToDouble = aiDecideDouble(hand, match.trumpSuit, match.doubling.level, role, match.cumulativeScores, teamToAct);
         try {
           if (wantsToDouble) {
+            const levelNamesAI = ["", "دبل", "ثري", "فور", "خمسة"];
+            const spokenLevel = levelNamesAI[match.doubling.level + 1];
             match.requestDouble(teamToAct);
+            speak(spokenLevel);
             afterAction();
           } else {
             match.proceedToPlay();
