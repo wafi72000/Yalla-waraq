@@ -55,7 +55,7 @@ if (state === "human-bidding") {
 async function waitForEnabledCard(maxMs = 20000) {
   let waited = 0;
   while (waited < maxMs) {
-    const enabledCard = [...document.querySelectorAll("#handRow .card")].find((el) => !el.classList.contains("disabled"));
+    const enabledCard = [...document.querySelectorAll("#handRow .card")].find((el) => !el.classList.contains("not-playable"));
     if (enabledCard) return enabledCard;
     await new Promise((r) => setTimeout(r, 150));
     waited += 150;

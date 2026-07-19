@@ -344,8 +344,8 @@ function renderSunDoublingBar() {
 let balootAnnounceActive = false;
 
 const CARD_ASPECT_RATIO = 84 / 58; // نفس نسبة أبعاد صور الورق الحقيقية - نحافظ عليها دايماً عشان ما تنعصر الرسمة
-const MAX_CARD_WIDTH = 58;
-const MIN_CARD_WIDTH = 30;
+const MAX_CARD_WIDTH = 80;
+const MIN_CARD_WIDTH = 34;
 const HAND_GAP = 3;
 
 /// يحسب حجم الورق ديناميكياً عشان يتناسب دايماً بصف واحد بس، بغض النظر عن عدد الورق أو عرض الشاشة
@@ -377,8 +377,10 @@ function renderHand() {
   const isMyTurn = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
   for (const card of hand) {
     const el = cardDisplay(card);
-    if (!isMyTurn || !isCardLegalForHuman(card)) {
-      el.classList.add("disabled");
+    if (!isMyTurn) {
+      el.classList.add("not-playable"); // مو دورك - ما يصير تضغط عليها، بس تبقى بلونها الطبيعي (بدون تظليل)
+    } else if (!isCardLegalForHuman(card)) {
+      el.classList.add("not-playable", "illegal"); // بدورك فعلاً، بس هذي الورقة ممنوعة (قانون اتباع اللون مثلاً) - تتظلّل
     } else {
       el.addEventListener("click", () => onHumanPlayCard(card));
     }

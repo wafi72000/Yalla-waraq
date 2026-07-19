@@ -218,7 +218,7 @@ html, body {
 /* ===== يد اللاعب ===== */
 .hand-area {
   flex-shrink: 0;
-  height: 118px;
+  height: 178px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -271,7 +271,11 @@ html, body {
 }
 .card.card-image { padding: 0; }
 .card.card-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.card.disabled {
+.card.not-playable {
+  cursor: default;
+  pointer-events: none;
+}
+.card.illegal {
   opacity: 0.3;
   cursor: not-allowed;
   filter: grayscale(0.7);
@@ -279,7 +283,7 @@ html, body {
 .card.pressing { transform: translateY(-8px); }
 
 /* بطاقة قابلة للعب فعلياً (دورك) تتميّز بتوهج ذهبي ثابت - بدون أي حركة، اليد تبقى ثابتة تماماً */
-#handRow .card:not(.disabled) {
+#handRow .card:not(.not-playable):not(.illegal) {
   box-shadow: 0 0 0 3px var(--gold-light), 0 0 14px 3px rgba(232,200,120,0.7);
 }
 
