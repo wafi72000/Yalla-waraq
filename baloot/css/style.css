@@ -225,14 +225,9 @@ html, body {
 }
 .card.pressing { transform: translateY(-8px); }
 
-/* بطاقة قابلة للعب فعلياً (دورك) تتميّز بوضوح شديد - توهج ذهبي نابض، ما يمكن تفوتها */
+/* بطاقة قابلة للعب فعلياً (دورك) تتميّز بتوهج ذهبي ثابت - بدون أي حركة، اليد تبقى ثابتة تماماً */
 #handRow .card:not(.disabled) {
   box-shadow: 0 0 0 3px var(--gold-light), 0 0 14px 3px rgba(232,200,120,0.7);
-  animation: playable-pulse 1.4s infinite;
-}
-@keyframes playable-pulse {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
 }
 
 /* بانر واضح "دورك!" يظهر فوق يدّك وقت دورك بالضبط - ما يفوّته أحد */
