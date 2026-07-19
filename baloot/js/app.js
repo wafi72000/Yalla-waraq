@@ -334,6 +334,23 @@ function renderSunDoublingBar() {
 
 let balootAnnounceActive = false;
 
+const CARD_ASPECT_RATIO = 84 / 58; // نفس نسبة أبعاد صور الورق الحقيقية - نحافظ عليها دايماً عشان ما تنعصر الرسمة
+const MAX_CARD_WIDTH = 58;
+const MIN_CARD_WIDTH = 30;
+const HAND_GAP = 3;
+
+/// يحسب حجم الورق ديناميكياً عشان يتناسب دايماً بصف واحد بس، بغض النظر عن عدد الورق أو عرض الشاشة
+function applyDynamicCardSize(row, cardCount) {
+  if (cardCount === 0) return;
+  const containerWidth = row.parentElement?.clientWidth || row.clientWidth || window.innerWidth - 16;
+  const totalGap = HAND_GAP * Math.max(cardCount - 1, 0);
+  const available = containerWidth - totalGap;
+  const width = Math.max(MIN_CARD_WIDTH, Math.min(MAX_CARD_WIDTH, Math.floor(available / cardCount)));
+  const height = Math.round(width * CARD_ASPECT_RATIO);
+  row.style.setProperty("--dynamic-card-w", `${width}px`);
+  row.style.setProperty("--dynamic-card-h", `${height}px`);
+}
+
 function renderHand() {
   const isMyTurnNow = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
   $("yourTurnBanner").classList.toggle("hidden", !isMyTurnNow);
@@ -345,6 +362,8 @@ function renderHand() {
     if (a.suit !== b.suit) return a.suit.localeCompare(b.suit);
     return b.rank - a.rank;
   });
+
+  applyDynamicCardSize(row, hand.length);
 
   const isMyTurn = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
   for (const card of hand) {
