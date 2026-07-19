@@ -22,16 +22,23 @@ function $(id) { return document.getElementById(id); }
 
 function suitIsRed(suit) { return suit === Suit.HEARTS || suit === Suit.DIAMONDS; }
 
+const FACE_SUIT_NAME = { hearts: "heart", diamonds: "diamond", clubs: "club", spades: "spade" };
+const RANK_FILE_NAME = { 11: "jack", 12: "queen", 13: "king", 14: "1" }; // الأص بترقيم ملفات SVG المصدر = 1
+
+function cardImagePath(card) {
+  const rankPart = RANK_FILE_NAME[card.rank] ?? String(card.rank);
+  return `assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
+}
+
 function cardDisplay(card) {
   const div = document.createElement("div");
-  div.className = "card" + (suitIsRed(card.suit) ? " red" : "");
+  div.className = "card card-image"; // رسمة حقيقية بدل النص - تمييز أوضح بكثير من الأرقام والحروف
   div.dataset.cardId = card.id;
-  const rankText = rankDisplayName(card.rank);
-  div.innerHTML = `
-    <div class="corner-rank">${rankText}<div class="corner-suit">${SUIT_SYMBOL[card.suit]}</div></div>
-    <div class="center-suit">${SUIT_SYMBOL[card.suit]}</div>
-    <div class="bottom-corner">${rankText}<div class="corner-suit">${SUIT_SYMBOL[card.suit]}</div></div>
-  `;
+  const img = document.createElement("img");
+  img.src = cardImagePath(card);
+  img.alt = `${rankDisplayName(card.rank)} ${SUIT_SYMBOL[card.suit]}`;
+  img.draggable = false;
+  div.appendChild(img);
   return div;
 }
 
@@ -250,6 +257,9 @@ function renderDoublingBar() {
 let balootAnnounceActive = false;
 
 function renderHand() {
+  const isMyTurnNow = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
+  $("yourTurnBanner").classList.toggle("hidden", !isMyTurnNow);
+
   const row = $("handRow");
   row.innerHTML = "";
   if (!match.hands.has(HUMAN_ID)) return;

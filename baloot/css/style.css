@@ -210,27 +210,49 @@ html, body {
   height: 84px;
   border-radius: 8px;
   background: var(--cream);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 4px;
-  color: var(--ink);
-  font-weight: 700;
-  font-size: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.35);
   position: relative;
   cursor: pointer;
-  transition: transform 0.12s, opacity 0.15s;
+  transition: transform 0.12s, opacity 0.15s, box-shadow 0.15s;
+  overflow: hidden;
 }
-.card.red { color: var(--red); }
+.card.card-image { padding: 0; }
+.card.card-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .card.disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
-  filter: grayscale(0.5);
+  filter: grayscale(0.7);
 }
 .card.pressing { transform: translateY(-8px); }
-.card .corner-rank { line-height: 1; }
-.card .corner-suit { font-size: 13px; }
+
+/* بطاقة قابلة للعب فعلياً (دورك) تتميّز بوضوح شديد - توهج ذهبي نابض، ما يمكن تفوتها */
+#handRow .card:not(.disabled) {
+  box-shadow: 0 0 0 3px var(--gold-light), 0 0 14px 3px rgba(232,200,120,0.7);
+  animation: playable-pulse 1.4s infinite;
+}
+@keyframes playable-pulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* بانر واضح "دورك!" يظهر فوق يدّك وقت دورك بالضبط - ما يفوّته أحد */
+.your-turn-banner {
+  text-align: center;
+  font-family: 'Aref Ruqaa', serif;
+  font-size: 20px;
+  color: var(--gold-light);
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 6px 0;
+  margin-bottom: 6px;
+  animation: banner-glow 1s infinite;
+}
+@keyframes banner-glow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+.your-turn-banner.hidden { display: none; }
 .card .center-suit {
   position: absolute;
   top: 50%; left: 50%;
