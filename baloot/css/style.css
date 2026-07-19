@@ -113,6 +113,36 @@ html, body {
 }
 .card-back-count:empty { display: none; }
 
+/* ===== مروحة الورق - كل لاعب يظهر ورقه كمروحة موجّهة نحو الطاولة ===== */
+.card-fan {
+  position: relative;
+  width: 60px;
+  height: 38px;
+  pointer-events: none;
+}
+.card-fan .mini-card {
+  position: absolute;
+  width: 20px;
+  height: 28px;
+  top: 2px;
+  left: 50%;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, var(--felt-light), var(--felt-light) 3px, var(--gold) 3px, var(--gold) 6px);
+  border: 1px solid var(--gold);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  transform-origin: top center;
+}
+.card-fan .mini-card:nth-child(1) { transform: translateX(-50%) rotate(-28deg); }
+.card-fan .mini-card:nth-child(2) { transform: translateX(-50%) rotate(-14deg); }
+.card-fan .mini-card:nth-child(3) { transform: translateX(-50%) rotate(0deg); z-index: 1; }
+.card-fan .mini-card:nth-child(4) { transform: translateX(-50%) rotate(14deg); }
+.card-fan .mini-card:nth-child(5) { transform: translateX(-50%) rotate(28deg); }
+
+/* سالم (يمين الشاشة فعلياً) - الفان يدور 90° عشان يفتح نحو اليسار (نحو الطاولة) */
+.seat-left .card-fan { transform: rotate(90deg); margin: 6px -11px; }
+/* فهد (يسار الشاشة فعلياً) - الفان يدور -90° عشان يفتح نحو اليمين (نحو الطاولة) */
+.seat-right .card-fan { transform: rotate(-90deg); margin: 6px -11px; }
+
 .center-area {
   position: absolute;
   top: 50%; left: 50%;

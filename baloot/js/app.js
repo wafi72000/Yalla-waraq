@@ -127,8 +127,18 @@ function renderSeatsActiveTurn() {
 function renderCardBacks() {
   for (const id of AI_IDS) {
     const hand = match.hands.get(id);
-    const el = $(id === "salem" ? "leftCardCount" : id === "khaled" ? "topCardCount" : "rightCardCount");
-    el.textContent = hand && hand.length > 0 ? `${hand.length} ورقة` : "";
+    const count = hand?.length ?? 0;
+    const seatEl = $(SEAT_ELEMENT_ID[id]);
+    const countEl = $(id === "salem" ? "leftCardCount" : id === "khaled" ? "topCardCount" : "rightCardCount");
+    countEl.textContent = count > 0 ? `${count} ورقة` : "";
+
+    const fan = seatEl.querySelector(".card-fan");
+    if (fan) {
+      fan.style.display = count > 0 ? "" : "none";
+      const minis = fan.querySelectorAll(".mini-card");
+      const visibleCount = Math.min(minis.length, count); // ما نعرض أكثر مكوّنات من الورق الفعلي بيده
+      minis.forEach((mini, i) => { mini.style.display = i < visibleCount ? "" : "none"; });
+    }
   }
 }
 
