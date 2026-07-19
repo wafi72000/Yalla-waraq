@@ -449,3 +449,21 @@ html, body {
   border-radius: 6px;
 }
 .chat-phrase-btn:hover { background: rgba(255,255,255,0.08); }
+
+/* ===== أنيميشن توزيع الورق ===== */
+.deal-fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+}
+.deal-fx-card {
+  position: absolute;
+  width: 20px;
+  height: 28px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, var(--felt-light), var(--felt-light) 3px, var(--gold) 3px, var(--gold) 6px);
+  border: 1px solid var(--gold);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.45s ease-in;
+}

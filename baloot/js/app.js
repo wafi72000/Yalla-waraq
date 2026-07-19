@@ -6,6 +6,7 @@ import { ProjectType } from "./projects.js";
 import { aiDecideBid, aiChooseCard, aiDecideDouble } from "./ai.js";
 import { computeRawCardPoints } from "./scoring.js";
 import { speak, BID_SPEECH, PROJECT_SPEECH } from "./speech.js";
+import { sounds } from "./sounds.js";
 
 const HUMAN_ID = "human";
 // ترتيب فيزيائي بعقارب الساعة: أنت(أسفل) -> سالم(يسار) -> خالد(فوق، شريكك) -> فهد(يمين) -> رجوع لك
@@ -62,7 +63,53 @@ function newMatch() {
   match = new BalootMatch(baseSeatOrder, teamOfPlayer);
   balootAnnounceActive = false;
   render();
+  playDealingAnimation();
   maybeRunAI();
+}
+
+/// أنيميشن تزييني (بصري+صوتي) لتوزيع الورق ببداية كل يد - كل ورقة تطير من منتصف الطاولة نحو مقعدها
+function playDealingAnimation() {
+  const layer = $("dealFxLayer");
+  if (!layer) return;
+  const tableRect = $("tableArea")?.getBoundingClientRect();
+  if (!tableRect) return;
+  const centerX = tableRect.left + tableRect.width / 2;
+  const centerY = tableRect.top + tableRect.height / 2;
+
+  const targets = [
+    $("handRow"), // أنت
+    $(SEAT_ELEMENT_ID.khaled), // خالد (فوق)
+    $(SEAT_ELEMENT_ID.salem),  // سالم
+    $(SEAT_ELEMENT_ID.fahad),  // فهد
+  ].filter(Boolean);
+  if (targets.length === 0) return;
+
+  const CARDS_PER_SEAT = 2; // تزييني بس - مو عدد حقيقي مطابق للتوزيع الفعلي
+  let step = 0;
+  const totalSteps = targets.length * CARDS_PER_SEAT;
+
+  for (let round = 0; round < CARDS_PER_SEAT; round++) {
+    for (const targetEl of targets) {
+      const delay = step * 90;
+      setTimeout(() => {
+        const rect = targetEl.getBoundingClientRect();
+        const targetX = rect.left + rect.width / 2;
+        const targetY = rect.top + rect.height / 2;
+        const mini = document.createElement("div");
+        mini.className = "deal-fx-card";
+        mini.style.left = `${centerX - 10}px`;
+        mini.style.top = `${centerY - 14}px`;
+        mini.style.opacity = "1";
+        layer.appendChild(mini);
+        sounds.dealCard();
+        void mini.offsetWidth; // فورس ريفلو
+        mini.style.transform = `translate(${targetX - centerX}px, ${targetY - centerY}px) scale(0.6)`;
+        mini.style.opacity = "0.4";
+        setTimeout(() => mini.remove(), 500);
+      }, delay);
+      step++;
+    }
+  }
 }
 
 function showToast(message) {
@@ -406,6 +453,7 @@ function onHumanPlayCard(card) {
   const pressedBaloot = isBalootCard && balootAnnounceActive;
   try {
     match.playCard(HUMAN_ID, card, pressedBaloot);
+    sounds.playCard();
     balootAnnounceActive = false;
     afterAction();
   } catch (e) {
@@ -522,6 +570,7 @@ $("nextHandBtn").addEventListener("click", () => {
   match.advanceToNextHand();
   match._lastSpokenRound = null;
   render();
+  playDealingAnimation();
   maybeRunAI();
 });
 $("newMatchBtn").addEventListener("click", newMatch);
@@ -552,16 +601,51 @@ function afterAction() {
     render(); // نعيد الرندر عشان شريط المشاريع يعكس النتيجة فوراً
   }
   if (match.completedTrick) {
+    sounds.takeTrick();
     // شوط اكتمل للتو - ننتظر وقفة واضحة قبل ما نكسحه ونكمل اللعب، عشان كل لاعب يشوف الأربع ورقات كاملة
+    const COLLECT_ANIM_MS = 350;
     setTimeout(() => {
       if (!match || !match.completedTrick) return; // احتياط لو تغيّرت الحالة بطريقة ثانية بالأثناء
-      match.clearCompletedTrick();
-      render();
-      maybeRunAI();
-    }, TRICK_PAUSE_MS);
+      animateTrickCollection(match.turnPlayerID); // الفائز بالشوط (turnPlayerID محدّث له أصلاً بالمحرك)
+      setTimeout(() => {
+        if (!match || !match.completedTrick) return;
+        match.clearCompletedTrick();
+        render();
+        maybeRunAI();
+      }, COLLECT_ANIM_MS);
+    }, Math.max(0, TRICK_PAUSE_MS - COLLECT_ANIM_MS));
     return;
   }
   maybeRunAI();
+}
+
+/// ينزلق الورق المعروض بالميدان نحو مقعد الفائز بالشوط (يذوب ويصغر بالتزامن) - تأثير بصري لـ"أخذ الجولة"
+function animateTrickCollection(winnerID) {
+  const trickZone = $("trickZone");
+  const cards = trickZone?.querySelectorAll(".trick-card");
+  if (!cards || cards.length === 0) return;
+  const targetEl = winnerID === HUMAN_ID ? $("handRow") : $(SEAT_ELEMENT_ID[winnerID]);
+  if (!targetEl) return;
+  const targetRect = targetEl.getBoundingClientRect();
+  const targetX = targetRect.left + targetRect.width / 2;
+  const targetY = targetRect.top + targetRect.height / 2;
+  cards.forEach((card) => {
+    const rect = card.getBoundingClientRect();
+    // نحوّل الورقة لموضع ثابت (fixed) بنفس مكانها الحالي بالضبط - يتفادى أي تعارض مع transform الأصلي
+    // الخاص بتموضعها (pos-top/left/right/bottom)، ونحرّكها بحرية عبر left/top بدل transform
+    card.style.position = "fixed";
+    card.style.left = `${rect.left}px`;
+    card.style.top = `${rect.top}px`;
+    card.style.margin = "0";
+    card.style.transform = "none";
+    card.style.transition = "left 0.35s ease-in, top 0.35s ease-in, opacity 0.35s ease-in, scale 0.35s ease-in";
+    card.style.zIndex = "95";
+    void card.offsetWidth; // فورس ريفلو - يضمن المتصفح يلتقط القيم الحالية قبل بدء الانتقال للهدف
+    card.style.left = `${targetX - rect.width / 2}px`;
+    card.style.top = `${targetY - rect.height / 2}px`;
+    card.style.opacity = "0";
+    card.style.scale = "0.35"; // خاصية scale مستقلة (مدعومة بالمتصفحات الحديثة) - تتفادى تعارض transform تماماً
+  });
 }
 
 // ===== حلقة الذكاء الاصطناعي =====
@@ -608,6 +692,7 @@ function maybeRunAI() {
       match.advanceToNextHand();
       match._lastSpokenRound = null;
       render();
+      playDealingAnimation();
       maybeRunAI();
     }, 1200);
     return;
@@ -676,6 +761,7 @@ function maybeRunAI() {
       if (card) {
         try {
           match.playCard(playerID, card, false);
+          sounds.playCard();
         } catch (e) {
           console.error("[AI] playCard unexpected:", e);
         }
