@@ -85,7 +85,6 @@ function render() {
   renderBiddingBar();
   renderDoublingBar();
   renderSunDoublingBar();
-  renderProjectsBar();
   renderHand();
   renderBalootButton();
   renderOverlays();
@@ -427,41 +426,6 @@ const PROJECT_NAME_AR = {
   [ProjectType.ARBAAMIA]: "أربعمية",
   [ProjectType.BALOOT]: "بلوت",
 };
-
-function renderProjectsBar() {
-  const bar = $("projectsBar");
-  if (!match.projectEntries || match.tricksWon.length > 0) {
-    bar.classList.add("hidden");
-    return;
-  }
-  bar.classList.remove("hidden");
-  bar.innerHTML = "";
-
-  const title = document.createElement("div");
-  title.className = "bidding-title";
-  const result = match.projectResult;
-  if (result.winningTeam === null) {
-    title.textContent = "المشاريع: لا أحد يملك مشروع";
-  } else {
-    const teamLabel = result.winningTeam === teamOfPlayer(HUMAN_ID) ? "لنا" : "لهم";
-    const points = match.projectPoints[result.winningTeam];
-    title.textContent = `المشاريع: ${teamLabel} (${points} نقطة) — ${result.reason}`;
-  }
-  bar.appendChild(title);
-
-  const list = document.createElement("div");
-  list.className = "bidding-choices";
-  for (const entry of match.projectEntries) {
-    if (!entry.project) continue;
-    const chip = document.createElement("div");
-    chip.className = "score-chip";
-    const isWinner = teamOfPlayer(entry.playerID) === result.winningTeam;
-    chip.style.opacity = isWinner ? "1" : "0.45"; // المشاريع الخاسرة تُعرض باهتة ("مشاريعك أرض")
-    chip.textContent = `${displayName(entry.playerID)}: ${PROJECT_NAME_AR[entry.project.type]} (${projectPointsOf(entry.project)})`;
-    list.appendChild(chip);
-  }
-  bar.appendChild(list);
-}
 
 // ===== النوافذ =====
 

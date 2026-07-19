@@ -113,35 +113,48 @@ html, body {
 }
 .card-back-count:empty { display: none; }
 
-/* ===== مروحة الورق - كل لاعب يظهر ورقه كمروحة موجّهة نحو الطاولة ===== */
-.card-fan {
+/* ===== مروحة الورق - تحيط بصورة اللاعب مباشرة، موجّهة نحو الطاولة ===== */
+.avatar-wrap {
   position: relative;
-  width: 60px;
-  height: 38px;
-  pointer-events: none;
+  width: 44px;
+  height: 44px;
+}
+.avatar-wrap .avatar {
+  position: relative;
+  z-index: 2; /* الأفاتار فوق المروحة - الورق يطلع "من وراء" الصورة */
+}
+.card-fan {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 1;
 }
 .card-fan .mini-card {
   position: absolute;
-  width: 20px;
-  height: 28px;
-  top: 2px;
-  left: 50%;
+  width: 16px;
+  height: 23px;
+  left: -8px;
+  top: 18.5px; /* الورقة تبدأ منزاحة عن مركز الأفاتار بمقدار نصف قطر المروحة (30px) */
   border-radius: 3px;
   background: repeating-linear-gradient(45deg, var(--felt-light), var(--felt-light) 3px, var(--gold) 3px, var(--gold) 6px);
   border: 1px solid var(--gold);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-  transform-origin: top center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.45);
+  /* الارتكاز يرجع بالضبط لمركز الأفاتار (نقطة صفر) - كذا الدوران ينتج تناثر حقيقي حول الصورة */
+  transform-origin: 8px -18.5px;
 }
-.card-fan .mini-card:nth-child(1) { transform: translateX(-50%) rotate(-28deg); }
-.card-fan .mini-card:nth-child(2) { transform: translateX(-50%) rotate(-14deg); }
-.card-fan .mini-card:nth-child(3) { transform: translateX(-50%) rotate(0deg); z-index: 1; }
-.card-fan .mini-card:nth-child(4) { transform: translateX(-50%) rotate(14deg); }
-.card-fan .mini-card:nth-child(5) { transform: translateX(-50%) rotate(28deg); }
+.card-fan .mini-card:nth-child(1) { transform: rotate(-38deg); }
+.card-fan .mini-card:nth-child(2) { transform: rotate(-19deg); }
+.card-fan .mini-card:nth-child(3) { transform: rotate(0deg); }
+.card-fan .mini-card:nth-child(4) { transform: rotate(19deg); }
+.card-fan .mini-card:nth-child(5) { transform: rotate(38deg); }
 
-/* سالم (يمين الشاشة فعلياً) - الفان يدور 90° عشان يفتح نحو اليسار (نحو الطاولة) */
-.seat-left .card-fan { transform: rotate(90deg); margin: 6px -11px; }
-/* فهد (يسار الشاشة فعلياً) - الفان يدور -90° عشان يفتح نحو اليمين (نحو الطاولة) */
-.seat-right .card-fan { transform: rotate(-90deg); margin: 6px -11px; }
+/* الاتجاه الافتراضي أعلاه يفتح لتحت (مناسب لخالد فوق - نحو الطاولة) */
+/* سالم (يمين الشاشة فعلياً) - نلف المروحة كاملة 90° عشان تفتح نحو اليسار (نحو الطاولة) */
+.seat-left .card-fan { transform: rotate(90deg); }
+/* فهد (يسار الشاشة فعلياً) - نلف المروحة كاملة -90° عشان تفتح نحو اليمين (نحو الطاولة) */
+.seat-right .card-fan { transform: rotate(-90deg); }
 
 .center-area {
   position: absolute;
