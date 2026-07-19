@@ -437,10 +437,11 @@ function renderProjectsBar() {
 // ===== النوافذ =====
 
 function renderOverlays() {
-  $("handEndOverlay").classList.toggle("hidden", match.phase !== "handOver");
-  $("matchEndOverlay").classList.toggle("hidden", !match.matchOver);
+  const showHandEnd = match.phase === "handOver" && !match.completedTrick;
+  $("handEndOverlay").classList.toggle("hidden", !showHandEnd);
+  $("matchEndOverlay").classList.toggle("hidden", !match.matchOver || !!match.completedTrick);
 
-  if (match.phase === "handOver") {
+  if (showHandEnd) {
     const r = match.handResult;
     $("handEndTitle").textContent = r.isCapot ? "كابوت!" : r.isPending ? "تعادل معلّق" : r.isDefeat ? "خسف!" : "انتهت اليد";
     $("handEndDetails").textContent = `لنا: ${r.A} — لهم: ${r.B}`;
