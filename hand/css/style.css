@@ -1,0 +1,795 @@
+:root {
+  --felt-dark: #0f2e23;
+  --felt: #1b4332;
+  --felt-light: #2d6650;
+  --gold: #c9a24b;
+  --gold-light: #e8c878;
+  --cream: #fbf6ea;
+  --ink: #1c1c1c;
+  --red: #c0392b;
+  --maroon: #7a2e2e;
+  --font-display: 'Aref Ruqaa', serif;
+  --font-body: 'IBM Plex Sans Arabic', 'Cairo', Tahoma, Arial, sans-serif;
+  --danger: #c0392b;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-dark) 70%);
+  color: var(--cream);
+  font-family: var(--font-body);
+  direction: rtl;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  gap: 4px;
+}
+
+.sadu-band {
+  flex-shrink: 0;
+  height: 12px;
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, var(--gold) 25%, transparent 25.5%) 0 0/18px 12px,
+    linear-gradient(225deg, var(--gold) 25%, transparent 25.5%) 0 0/18px 12px,
+    linear-gradient(45deg, var(--maroon) 25%, transparent 25.5%) 9px 0/18px 12px,
+    linear-gradient(315deg, var(--maroon) 25%, transparent 25.5%) 9px 0/18px 12px,
+    var(--felt-dark);
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
+/* ===== الرأس ===== */
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+}
+.round-badge {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--gold-light);
+  letter-spacing: 0.3px;
+}
+.score-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* لوحة هاند - شكل معيّن بـ4 دوائر نقاط (قبالة/يمين/يسار/أنت) */
+.hand-score-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hand-score-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.hand-score-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: 1px;
+}
+.hand-score-diamond {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+.hand-score-circle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1.2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--cream);
+}
+.hand-score-circle.leader { background: var(--gold); color: var(--felt-dark); }
+.hand-score-circle.top-pos { top: 0; left: 50%; transform: translateX(-50%); }
+.hand-score-circle.left-pos { top: 50%; left: 0; transform: translateY(-50%); }
+.hand-score-circle.right-pos { top: 50%; right: 0; transform: translateY(-50%); }
+.hand-score-circle.bottom-pos { bottom: 0; left: 50%; transform: translateX(-50%); }
+
+/* ===== طاولة الخصوم (قبالة / يمين / يسار) ===== */
+.table-layout {
+  position: relative;
+  flex-shrink: 0;
+  height: 110px; /* كانت 122px - قللناها بس بدون ما تقطع محتوى خالد (اسم+دائرة+مروحة+عداد ≈ 106px) */
+  margin: 0;
+}
+.opponent-slot {
+  position: absolute;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+.seat-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+}
+.opponent-slot.active {
+  background: rgba(243, 210, 122, 0.18);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.opponent-slot.opp-acting .opp-circle {
+  animation: oppActingPulse 0.26s ease;
+}
+@keyframes oppActingPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); box-shadow: 0 0 10px var(--gold-light); }
+  100% { transform: scale(1); }
+}
+.slot-top { top: 0; left: 50%; transform: translateX(-50%); }
+.slot-left { top: 100%; left: -4px; transform: translateY(90%); }
+.slot-right { top: 100%; right: -4px; transform: translateY(90%); }
+.slot-left, .slot-right { max-width: 90px; }
+.avatar-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.slot-right .avatar-row {
+  direction: ltr; /* الصفحة RTL بالكامل، وبدونها فهد كان يطلع معكوس عن سالم (الورق بالحافة بدل الدائرة) */
+}
+
+/* ===== تأثير الاحتفال - يتدرّج حسب قوة طريقة الإنهاء ===== */
+.celebration-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 70; /* فوق كل شي حتى الـtoast */
+}
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  opacity: 0.95;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  border-radius: 2px;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.95; }
+  100% { transform: translateY(115vh) rotate(720deg); opacity: 0.4; }
+}
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+#app.screen-shake { animation: screen-shake 0.45s ease-in-out; }
+
+.opponent-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cream);
+  white-space: nowrap;
+}
+
+.opp-fan {
+  position: relative;
+  width: 70px;
+  height: 38px;
+}
+.slot-left .opp-fan, .slot-right .opp-fan {
+  width: 30px;
+  height: 56px;
+}
+.opp-fan .card-back.fan {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform-origin: top center;
+  margin: 0 !important;
+}
+/* المروحة تنبني افتراضياً متجهة لتحت (محورها بالأعلى) - ندوّرها بالكامل حسب الاتجاه المطلوب نحو وسط الطاولة */
+.opp-fan.point-down { transform: rotate(0deg); }
+.opp-fan.point-right { transform: rotate(-90deg); }
+.opp-fan.point-left { transform: rotate(90deg); }
+
+.opp-circle {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--gold-light), var(--gold));
+  border: 2px solid var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--felt-dark);
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.opponent-name.in-race::after { content: " 🎯"; }
+.opponent-count { font-size: 10px; color: rgba(251,246,234,0.65); white-space: nowrap; }
+
+.card-back {
+  width: 26px;
+  height: 38px;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 1.5px, transparent 1.5px, transparent 6px),
+    repeating-linear-gradient(-45deg, var(--gold) 0, var(--gold) 1.5px, transparent 1.5px, transparent 6px),
+    linear-gradient(135deg, var(--maroon), var(--felt-dark));
+  border: 1.5px solid var(--gold);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ===== الطاولة ===== */
+.table-area {
+  flex-shrink: 0;
+  height: 350px; /* ثابتة تماماً - كل منطقة تصغّر ورقها تلقائياً (JS) لو احتاجت، بدل الطاولة تكبر */
+  margin: 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0,0,0,0.12);
+  border-radius: var(--radius);
+  padding: 6px;
+  border: 1px solid rgba(243,210,122,0.15);
+}
+
+/* بيرات خالد (فوق) وبيرات أنت (تحت) - أفقية، كل واحدة بمكانها بالضبط أمام اللاعب */
+.melds-top, .melds-bottom {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  height: 100px;
+  overflow: visible; /* التحجيم JS يضمن المحتوى يتسع - مفيش قص */
+}
+.melds-top:empty, .melds-bottom:empty { display: none; height: 0; }
+
+.table-middle-row {
+  flex-shrink: 0;
+  height: 130px;
+  display: flex;
+  direction: ltr; /* الصفحة كلها RTL، وبدونها كان flex بيعكس مكان meldsLeft/meldsRight فعلياً (بير فهد يطلع مكان سالم) */
+  align-items: center;
+  gap: 4px;
+}
+
+/* بيرات سالم (يسار) وفهد (يمين) - عمودية، نفس جنب اللاعب */
+.melds-side {
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 150px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 2px 0;
+  margin: 0 10px; /* مسافة عن أفاتار اللاعب اللي قاعد بنفس الحافة */
+  overflow: visible; /* التحجيم JS يضمن المحتوى يتسع - مفيش قص */
+}
+.melds-side .meld-group {
+  display: flex;
+  flex-direction: column; /* أكثر من بير لنفس اللاعب يترصّون عمودي - واحد تحت الثاني */
+  align-items: center;
+  gap: 4px;
+}
+.melds-side .meld-owner {
+  font-size: 9px;
+  text-align: center;
+  line-height: 1.2;
+}
+.melds-side .meld-cards {
+  display: flex;
+  flex-direction: row; /* الورق داخل البير نفسه أفقي - زي خالد بالضبط */
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 0;
+  margin-right: 0;
+  padding-top: 6px;
+  padding-right: 0;
+  border-right: none;
+  border-top: 2px solid rgba(243,210,122,0.45); /* فاصل واضح بين كل بير والبير اللي فوقه لنفس اللاعب */
+}
+.melds-side .meld-cards:first-child {
+  padding-top: 0;
+  border-top: none; /* أول بير ما يحتاج فاصل فوقه */
+}
+.melds-side .meld-cards .card.mini {
+  width: 30px; /* أصغر من المعتاد (40) بس بهذا العمود فقط - عشان بيرات أطول تنحشر بصف واحد */
+  margin-right: -15px;
+  margin-bottom: 0;
+}
+.melds-side .meld-cards .card.mini:last-child { margin-right: 0; }
+
+.melds-empty {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(251,246,234,0.5);
+  align-self: center;
+  padding: 16px 0;
+}
+.meld-group {
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 6px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.meld-owner {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+  width: 100%; /* يحتل صف لحاله فوق البيرات المتجاورة */
+}
+.meld-cards {
+  display: flex;
+  margin-right: 10px;
+  padding-right: 10px;
+  border-right: 2px solid rgba(243,210,122,0.45); /* كان 1px dashed خفيف جداً - يضيع وسط زحمة الورق */
+}
+.meld-cards:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+.meld-cards .card.mini { width: 30px; margin-right: -15px; cursor: pointer; }
+.meld-cards .card.mini:last-child { margin-right: 0; }
+
+.piles-row {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+}
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pile-label { font-size: 10px; color: rgba(251,246,234,0.7); font-weight: 600; }
+.stock-pile {
+  width: 44px; height: 62px;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 2px, transparent 2px, transparent 9px),
+    repeating-linear-gradient(-45deg, var(--gold) 0, var(--gold) 2px, transparent 2px, transparent 9px),
+    linear-gradient(135deg, var(--maroon), var(--felt-dark));
+  border: 1.5px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.18s ease;
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; color: var(--gold-light);
+}
+.stock-pile.drawing { transform: scale(0.85); }
+.stock-pile.disabled { opacity: 0.4; }
+.discard-slot {
+  width: 44px; height: 62px;
+  border-radius: 7px;
+  border: 1.5px dashed rgba(243,210,122,0.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.18s ease;
+}
+.discard-slot.disabled { opacity: 0.5; }
+.discard-slot.just-discarded { transform: scale(1.12); }
+.discard-slot .card { width: 44px; height: 62px; border-radius: 6px; }
+
+/* ===== الكرت ===== */
+.card {
+  width: 64px;
+  height: 92px;
+  border-radius: 9px;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  font-weight: 800;
+  position: relative;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+.card.mini { width: 40px; height: 58px; border-radius: 5px; }
+.card .suit { font-size: 16px; line-height: 1; }
+.card.mini .suit { font-size: 10px; }
+.card.red { color: var(--red); }
+.card.joker { font-size: 30px; }
+.card.mini.joker { font-size: 16px; }
+
+/* الزوايا (الرتبة + النوع) - قطرية: فوق-يسار / تحت-يمين (تصميم تقليدي) */
+.card .corner {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  z-index: 2;
+}
+.card .corner .csuit { font-size: 13px; }
+.card .corner.top { top: 4px; left: 4px; }
+.card .corner.bottom { bottom: 4px; left: 4px; transform: rotate(180deg); }
+.card.red .corner { color: var(--red); }
+.card:not(.red):not(.joker) .corner { color: var(--ink); }
+
+/* نقط العدد (2-10) - مواضع مطلقة تحاكي الورق الحقيقي */
+.card .pip {
+  position: absolute;
+  font-size: 15px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+.card .pip.rot { transform: translate(-50%, -50%) rotate(180deg); }
+.card.red .pip { color: var(--red); }
+.card:not(.red) .pip { color: var(--ink); }
+
+/* الأص: رمز واحد كبير بالنص */
+.card .center-suit { font-size: 36px; }
+.card.red .center-suit { color: var(--red); }
+.card:not(.red):not(.joker) .center-suit { color: var(--ink); }
+
+/* الصور (J/Q/K) - حرف بإطار مزخرف بدل صورة حقيقية */
+.card .face-card-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  pointer-events: none;
+}
+  width: 58%;
+  height: 70%;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  position: relative;
+}
+.card.red .face-box { color: var(--red); }
+.card:not(.red) .face-box { color: var(--ink); }
+
+/* mini: نرجع للتصميم المبسّط (رتبة فوق نوع تحت بالنص، بلا زوايا/نقط) */
+.card.mini .corner, .card.mini .pip, .card.mini .center-suit, .card.mini .face-box { display: none; }
+.card.mini .rank, .card.mini .suit { display: block; }
+.card:not(.mini) .rank, .card:not(.mini) .suit { display: none; }
+.card.selected {
+  transform: translateY(-12px);
+  box-shadow: 0 0 0 2.5px var(--gold-light), 0 6px 10px rgba(0,0,0,0.4);
+}
+.card.meld-hint {
+  box-shadow: 0 0 0 3px var(--meld-hint-color, var(--felt-light)), 0 2px 5px rgba(0,0,0,0.35);
+}
+.card.meld-hint-a { --meld-hint-color: #2ecc71; }
+.card.meld-hint-b { --meld-hint-color: #3498db; }
+.card.meld-hint-c { --meld-hint-color: #e67e22; }
+.card.meld-hint-d { --meld-hint-color: #e84393; }
+.card.meld-hint-e { --meld-hint-color: #f1c40f; }
+
+/* ===== يد اللاعب ===== */
+.hand-rows {
+  flex: 1;
+  min-height: 200px; /* صفين ورق (92px لكل صف) + فراغات - حد أدنى يحمي يدّك من الانضغاط لو الطاولة كبرت */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px 6px;
+}
+.hand-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  min-height: 92px;
+  overflow: visible;
+}
+.hand-row .card { margin: 0 -8px; cursor: grab; touch-action: none; user-select: none; }
+.card.pressing { transform: scale(1.04); z-index: 20; }
+.card.dragging {
+  transition: none !important;
+  z-index: 50;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.5);
+}
+.card.drag-placeholder { opacity: 0; } /* الأصل يبقى بمكانه (يحافظ على الفجوة) بس مخفي بصرياً */
+#dragLayer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+#dragLayer .card {
+  position: fixed;
+  margin: 0 !important;
+  transition: none !important;
+  box-shadow: 0 12px 20px rgba(0,0,0,0.55);
+}
+.card.just-moved {
+  animation: justMovedPulse 0.7s ease-out;
+  z-index: 15;
+}
+@keyframes justMovedPulse {
+  0% { box-shadow: 0 0 0 4px var(--gold-light), 0 8px 14px rgba(0,0,0,0.5); transform: translateY(-10px) scale(1.06); }
+  100% { box-shadow: 0 2px 5px rgba(0,0,0,0.35); transform: translateY(0) scale(1); }
+}
+
+/* ===== أزرار الإجراءات ===== */
+.total-points-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: max-content;
+  max-width: 88vw;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-light);
+  background: rgba(20,20,20,0.92);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 6px 12px;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.total-points-bar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.total-points-bar.show { max-height: 34px; opacity: 1; padding: 4px 6px; }
+.total-points-bar.ready { color: #2ecc71; }
+
+.action-bar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+  padding: 2px 0;
+  min-height: 78px; /* ثابت بغض النظر عن عدد الأزرار الظاهرة - يمنع تحرّك يد اللاعب لما الأزرار تتغيّر */
+}
+.action-btn {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: var(--felt-dark);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.action-btn:disabled {
+  background: rgba(255,255,255,0.12);
+  color: rgba(251,246,234,0.4);
+  box-shadow: none;
+}
+.action-btn.secondary {
+  background: rgba(255,255,255,0.1);
+  color: var(--cream);
+  border: 1px solid rgba(251,246,234,0.3);
+}
+.action-btn.active-mode {
+  background: linear-gradient(180deg, #5dade2, #2980b9);
+  color: var(--cream);
+  border: 1px solid var(--cream);
+}
+
+/* ===== نوافذ منبثقة ===== */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+  padding: 20px;
+}
+.overlay.hidden { display: none; }
+.modal {
+  background: var(--felt-dark);
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 360px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  margin: 0 0 12px;
+  color: var(--gold-light);
+  font-size: 18px;
+  text-align: center;
+}
+.modal p { font-size: 14px; line-height: 1.6; text-align: center; }
+.score-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.score-table td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; }
+.score-table td:first-child { font-weight: 700; }
+.score-table tr.leader td { color: var(--gold-light); font-weight: 800; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-actions .action-btn { flex: 1; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.92);
+  color: var(--cream);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid var(--gold);
+  z-index: 60;
+  max-width: 85vw;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ===== شاشة البداية ===== */
+#startScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-dark) 75%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+#startScreen.hidden { display: none; }
+.start-sadu-band {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 14px;
+  background:
+    linear-gradient(135deg, var(--gold) 25%, transparent 25.5%) 0 0/18px 14px,
+    linear-gradient(225deg, var(--gold) 25%, transparent 25.5%) 0 0/18px 14px,
+    linear-gradient(45deg, var(--maroon) 25%, transparent 25.5%) 9px 0/18px 14px,
+    linear-gradient(315deg, var(--maroon) 25%, transparent 25.5%) 9px 0/18px 14px,
+    var(--felt-dark);
+}
+.start-content { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 320px; }
+.start-logo { font-size: 56px; margin-bottom: 4px; }
+.start-title {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--gold-light);
+  margin: 0;
+  letter-spacing: 2px;
+}
+.start-subtitle {
+  color: rgba(251,246,234,0.75);
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+.start-speed-section { width: 100%; margin-bottom: 32px; }
+.start-speed-label {
+  font-size: 13px;
+  color: var(--gold-light);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.start-speed-options { display: flex; gap: 8px; justify-content: center; }
+.speed-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(251,246,234,0.25);
+  color: var(--cream);
+  border-radius: 12px;
+  padding: 10px 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.speed-btn.active {
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: var(--felt-dark);
+  border-color: var(--gold-light);
+}
+.start-play-btn {
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  color: var(--felt-dark);
+  border: none;
+  border-radius: 16px;
+  padding: 16px 56px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+}
+
+/* ===== فقاعة الدور - تطلع عند مقعد اللاعب وتختفي ===== */
+.turn-bubble {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  background: rgba(20,20,20,0.92);
+  color: var(--cream);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+  z-index: 20;
+}
+.turn-bubble.show { opacity: 1; }
+
+.self-turn-bubble {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: max-content;
+  max-width: 88vw;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(20,20,20,0.92);
+  border: 1px solid currentColor;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 41;
+  transition: opacity 0.2s, transform 0.2s;
+  color: #2ecc71;
+}
+.self-turn-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.self-turn-bubble.urgent { color: #e67e22; }

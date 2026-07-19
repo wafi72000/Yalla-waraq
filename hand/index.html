@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>لعبة الهند</title>
+<meta name="theme-color" content="#0a4234">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الهند">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="startScreen">
+  <div class="start-sadu-band"></div>
+  <div class="start-content">
+    <div class="start-logo">🃏</div>
+    <h1 class="start-title">الهند</h1>
+    <p class="start-subtitle">لعبة الورق الخليجية التقليدية</p>
+
+    <div class="start-speed-section">
+      <div class="start-speed-label">سرعة الخصوم</div>
+      <div class="start-speed-options" id="startSpeedOptions">
+        <button class="speed-btn" data-speed="slow">🐢 هادئة</button>
+        <button class="speed-btn active" data-speed="medium">🚶 متوسطة</button>
+        <button class="speed-btn" data-speed="fast">⚡ سريعة</button>
+      </div>
+    </div>
+
+    <button class="start-play-btn" id="startPlayBtn">ابدأ اللعب</button>
+  </div>
+</div>
+
+<div id="app">
+
+  <div class="app-header">
+    <div style="display:flex; gap:6px;">
+      <button class="score-btn" id="muteBtn" style="padding:6px 10px;">🔊</button>
+      <button class="score-btn" id="scoreBtn">📊 النقاط</button>
+    </div>
+    <div class="hand-score-panel">
+      <div class="hand-score-diamond" id="handScoreDiamond">
+        <div class="hand-score-circle top-pos" id="scoreTop">0</div>
+        <div class="hand-score-circle left-pos" id="scoreLeft">0</div>
+        <div class="hand-score-circle right-pos" id="scoreRight">0</div>
+        <div class="hand-score-circle bottom-pos" id="scoreBottom">0</div>
+      </div>
+      <div class="hand-score-text">
+        <div class="hand-score-title">هاند</div>
+        <div class="round-badge" id="roundBadge">الجولة: 1/7</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sadu-band"></div>
+  <div class="table-layout" id="tableLayout">
+    <div class="opponent-slot slot-top" id="oppTop">
+      <div class="seat-content" id="oppTopContent"></div>
+      <div class="turn-bubble" id="oppTopBubble"></div>
+    </div>
+    <div class="opponent-slot slot-left" id="oppLeft">
+      <div class="seat-content" id="oppLeftContent"></div>
+      <div class="turn-bubble" id="oppLeftBubble"></div>
+    </div>
+    <div class="opponent-slot slot-right" id="oppRight">
+      <div class="seat-content" id="oppRightContent"></div>
+      <div class="turn-bubble" id="oppRightBubble"></div>
+    </div>
+  </div>
+
+  <div class="table-area">
+    <div class="melds-top" id="meldsTop"></div>
+    <div class="table-middle-row">
+      <div class="melds-side" id="meldsLeft"></div>
+      <div class="piles-row" id="pilesRow">
+        <div class="pile">
+          <div class="stock-pile" id="stockPile">سحب</div>
+          <div class="pile-label" id="stockCount">الدِّستة</div>
+        </div>
+        <div class="pile">
+          <div class="discard-slot" id="discardSlot"></div>
+          <div class="pile-label">النار</div>
+        </div>
+      </div>
+      <div class="melds-side" id="meldsRight"></div>
+    </div>
+    <div class="melds-bottom" id="meldsSelf"></div>
+  </div>
+
+  <div class="self-turn-bubble" id="selfTurnBubble"></div>
+  <div class="total-points-bar" id="totalPointsBar">المجموع: 0</div>
+  <div class="action-bar" id="actionBar">
+    <button class="action-btn secondary" id="btnUndoNar" style="display:none;">↩️ إرجاع وسحب من الدِّستة</button>
+    <button class="action-btn" id="btnDeclare">نزول</button>
+    <button class="action-btn" id="btnHand">هند</button>
+    <button class="action-btn" id="btnKhales">خالص</button>
+    <button class="action-btn" id="btnColor">لون</button>
+    <button class="action-btn" id="btnQarinq">قرينق</button>
+  </div>
+
+  <div class="hand-rows" id="handRows">
+    <div class="hand-row" id="handRowTop"></div>
+    <div class="hand-row" id="handRowBottom"></div>
+  </div>
+</div>
+
+<div id="dragLayer"></div>
+
+<!-- نافذة لوحة النقاط -->
+<div class="overlay hidden" id="scoreOverlay">
+  <div class="modal">
+    <h2>لوحة النقاط</h2>
+    <table class="score-table" id="scoreTable"></table>
+    <div class="modal-actions">
+      <button class="action-btn secondary" id="closeScoreBtn">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة نهاية الجولة -->
+<div class="celebration-layer" id="celebrationLayer"></div>
+<div class="overlay hidden" id="roundEndOverlay">
+  <div class="modal">
+    <h2 id="roundEndTitle">انتهت الجولة</h2>
+    <p id="roundEndDetails"></p>
+    <table class="score-table" id="roundEndScoreTable"></table>
+    <div class="modal-actions">
+      <button class="action-btn" id="nextRoundBtn">الجولة التالية</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة الجولة العالقة -->
+<div class="overlay hidden" id="stuckOverlay">
+  <div class="modal">
+    <h2>الجولة تعثّرت</h2>
+    <p>ما حصل تقدّم لفترة طويلة. نعيد توزيع هذي الجولة من جديد بدون أي تأثير على النقاط السابقة.</p>
+    <div class="modal-actions">
+      <button class="action-btn" id="redealBtn">إعادة التوزيع</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة نهاية المباراة -->
+<div class="overlay hidden" id="gameEndOverlay">
+  <div class="modal">
+    <h2>🏆 انتهت المباراة</h2>
+    <p id="gameEndWinner"></p>
+    <table class="score-table" id="gameEndScoreTable"></table>
+    <div class="modal-actions">
+      <button class="action-btn" id="newGameBtn">مباراة جديدة</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

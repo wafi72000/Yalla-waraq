@@ -1,0 +1,99 @@
+// يثبّت: تحميل الصفحة، بدء مباراة، والوصول لمرحلة اللعب أو المزايدة عبر الواجهة (بمحاكاة نقرات)
+// ملاحظة: الإنسان قد لا يحصل على دور بالمزايدة إطلاقاً لو AI اشترى قبله (سلوك صحيح، مو خلل)
+import { JSDOM } from "jsdom";
+import fs from "fs";
+
+const html = fs.readFileSync(new URL("./index.html", import.meta.url), "utf-8");
+const dom = new JSDOM(html, { url: "http://localhost/", runScripts: "dangerously", resources: "usable" });
+global.window = dom.window;
+global.document = dom.window.document;
+
+let pass = 0, fail = 0;
+function check(name, actual, expected) {
+  const ok = JSON.stringify(actual) === JSON.stringify(expected);
+  console.log(`${ok ? "✅" : "❌"} ${name} → ${JSON.stringify(actual)} (متوقع: ${JSON.stringify(expected)})`);
+  ok ? pass++ : fail++;
+}
+
+await import("./js/app.js");
+
+document.getElementById("startMatchBtn").dispatchEvent(new window.Event("click", { bubbles: true }));
+await new Promise((r) => setTimeout(r, 50));
+check("نافذة البداية اختفت بعد الضغط على ابدأ", document.getElementById("startOverlay").classList.contains("hidden"), true);
+
+async function waitForActionableState(maxMs = 10000) {
+  let waited = 0;
+  while (waited < maxMs) {
+    const biddingVisible = !document.getElementById("biddingBar").classList.contains("hidden");
+    const turnText = document.getElementById("turnIndicator").textContent;
+    if (biddingVisible) return "human-bidding";
+    if (turnText.includes("ميتة")) return "dead";
+    if (turnText.includes("دور")) return "playing";
+    await new Promise((r) => setTimeout(r, 100));
+    waited += 100;
+  }
+  return "timeout";
+}
+
+const state = await waitForActionableState();
+check("وصلت اللعبة لحالة قابلة للتفاعل خلال 10 ثواني (مو عالقة)", state !== "timeout", true);
+console.log(`(الحالة الفعلية: ${state})`);
+
+if (state === "human-bidding") {
+  const bidBtns = document.querySelectorAll(".bid-btn");
+  check("فيه أزرار مزايدة معروضة لدور الإنسان", bidBtns.length > 0, true);
+  bidBtns[bidBtns.length - 1].dispatchEvent(new window.Event("click", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 200));
+  check("بعد مزايدة الإنسان، ما ظهر خطأ", document.getElementById("toast").classList.contains("show"), false);
+} else if (state === "playing") {
+  check("مرحلة اللعب وصلت بنجاح", true, true);
+} else if (state === "dead") {
+  check("صكّة ميتة اكتُشفت بشكل صحيح", true, true);
+}
+
+// ===== نمتد أبعد من المرحلة الأولى: ننتظر وصول دور فعلي للإنسان بالرمي، ونجرّب رمي ورقة فعلياً =====
+async function waitForEnabledCard(maxMs = 20000) {
+  let waited = 0;
+  while (waited < maxMs) {
+    const enabledCard = [...document.querySelectorAll("#handRow .card")].find((el) => !el.classList.contains("disabled"));
+    if (enabledCard) return enabledCard;
+    await new Promise((r) => setTimeout(r, 150));
+    waited += 150;
+  }
+  return null;
+}
+
+const enabledCard = await waitForEnabledCard();
+check("توصّلنا لدور فعلي للإنسان بالرمي (ورقة غير معطّلة بيده)", !!enabledCard, true);
+
+if (enabledCard) {
+  const cardIdBefore = enabledCard.dataset.cardId;
+  const handCountBefore = document.querySelectorAll("#handRow .card").length;
+  enabledCard.dispatchEvent(new window.Event("click", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 200));
+
+  const handCountAfter = document.querySelectorAll("#handRow .card").length;
+  check("بعد رمي ورقة، عدد ورق يد الإنسان قلّ بواحد", handCountAfter, handCountBefore - 1);
+
+  const stillThere = [...document.querySelectorAll("#handRow .card")].some((el) => el.dataset.cardId === cardIdBefore);
+  check("الورقة المرمية اختفت فعلياً من اليد", stillThere, false);
+
+  await new Promise((r) => setTimeout(r, 3000)); // ننتظر الـAI الثلاثة يكملون الشوط
+  check("بعد اكتمال الشوط، ما ظهر خطأ محرك حقيقي بالـtoast", document.getElementById("toast").classList.contains("show"), false);
+}
+
+// ===== الدردشة السريعة: زر الدردشة يفتح القائمة، والضغط على عبارة ينشئ فقاعة فوق اليد =====
+check("زر الدردشة السريعة موجود بالصفحة", !!document.getElementById("chatToggleBtn"), true);
+document.getElementById("chatToggleBtn").dispatchEvent(new window.Event("click", { bubbles: true }));
+check("قائمة العبارات تظهر بعد الضغط", !document.getElementById("chatPhrases").classList.contains("hidden"), true);
+
+const phraseBtn = document.querySelector(".chat-phrase-btn");
+check("فيه أزرار عبارات بالقائمة", !!phraseBtn, true);
+if (phraseBtn) {
+  phraseBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 50));
+  check("فقاعة دردشة ظهرت بعد الضغط على عبارة", document.querySelectorAll(".chat-bubble").length > 0, true);
+}
+
+console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
+process.exit(fail > 0 ? 1 : 0);

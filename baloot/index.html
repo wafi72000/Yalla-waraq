@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>البلوت</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+
+  <div class="top-bar">
+    <div class="score-strip">
+      <div class="score-chip us">لنا <span id="scoreUs">0</span></div>
+      <div class="score-chip them">لهم <span id="scoreThem">0</span></div>
+    </div>
+    <div class="hand-points" id="handPointsBadge"></div>
+    <button class="icon-btn" id="scoreboardBtn">🧾</button>
+  </div>
+
+  <div class="table-area" id="tableArea">
+    <div class="seat seat-top" id="seatTop">
+      <div class="avatar">خ</div>
+      <div class="seat-name">خالد (شريكك)</div>
+      <div class="card-back-count" id="topCardCount"></div>
+    </div>
+
+    <div class="seat seat-left" id="seatLeft">
+      <div class="avatar">س</div>
+      <div class="seat-name">سالم</div>
+      <div class="card-back-count" id="leftCardCount"></div>
+    </div>
+
+    <div class="seat seat-right" id="seatRight">
+      <div class="avatar">ف</div>
+      <div class="seat-name">فهد</div>
+      <div class="card-back-count" id="rightCardCount"></div>
+    </div>
+
+    <div class="center-area" id="centerArea">
+      <div class="flipped-card-zone" id="flippedCardZone"></div>
+      <div class="trick-zone" id="trickZone"></div>
+      <div class="turn-indicator" id="turnIndicator"></div>
+    </div>
+  </div>
+
+  <div class="bidding-bar hidden" id="biddingBar">
+    <div class="bidding-title" id="biddingTitle"></div>
+    <div class="bidding-choices" id="biddingChoices"></div>
+  </div>
+
+  <div class="hukm-suit-picker hidden" id="hukmSuitPicker">
+    <div class="picker-title">اختر لون الحكم الثاني</div>
+    <div class="suit-options">
+      <button class="suit-btn" data-suit="hearts">♥</button>
+      <button class="suit-btn" data-suit="diamonds">♦</button>
+      <button class="suit-btn" data-suit="clubs">♣</button>
+      <button class="suit-btn" data-suit="spades">♠</button>
+    </div>
+  </div>
+
+  <div class="doubling-bar hidden" id="doublingBar">
+    <div class="doubling-title" id="doublingTitle"></div>
+    <div class="doubling-choices" id="doublingChoices"></div>
+  </div>
+
+  <div class="projects-bar hidden" id="projectsBar"></div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="chat-bubble-layer" id="chatBubbleLayer"></div>
+
+  <div class="quick-chat-bar" id="quickChatBar">
+    <button class="chat-toggle-btn" id="chatToggleBtn">💬</button>
+    <div class="chat-phrases hidden" id="chatPhrases"></div>
+  </div>
+
+  <div class="hand-area">
+    <div class="baloot-btn-wrap" id="balootBtnWrap"></div>
+    <div class="hand-row" id="handRow"></div>
+  </div>
+
+  <div class="overlay hidden" id="handEndOverlay">
+    <div class="modal">
+      <h2 id="handEndTitle"></h2>
+      <p id="handEndDetails"></p>
+      <table class="score-table" id="handEndScoreTable"></table>
+      <div class="modal-actions">
+        <button class="action-btn" id="nextHandBtn">اليد التالية</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="matchEndOverlay">
+    <div class="modal">
+      <h2 id="matchEndTitle">انتهت المباراة</h2>
+      <p id="matchEndWinner"></p>
+      <p id="matchEndReason"></p>
+      <div class="modal-actions">
+        <button class="action-btn" id="newMatchBtn">مباراة جديدة</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="scoreboardOverlay">
+    <div class="modal">
+      <h2>النشرة</h2>
+      <div class="scoreboard-big">
+        <div class="scoreboard-team">
+          <div class="team-label">لنا</div>
+          <div class="team-score" id="scoreboardUs">0</div>
+        </div>
+        <div class="scoreboard-team">
+          <div class="team-label">لهم</div>
+          <div class="team-score" id="scoreboardThem">0</div>
+        </div>
+      </div>
+      <p class="scoreboard-target">الهدف: 152 نقطة</p>
+      <div class="modal-actions">
+        <button class="action-btn" id="closeScoreboardBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="startOverlay">
+    <div class="modal">
+      <h2>البلوت</h2>
+      <p>فريقين، أربعة لاعبين، أول من يصل 152 يفوز</p>
+      <div class="modal-actions">
+        <button class="action-btn" id="startMatchBtn">ابدأ المباراة</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

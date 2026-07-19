@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>يلا ورق</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt-dark: #0f2e23;
+    --felt: #1b4332;
+    --felt-light: #2d6650;
+    --gold: #c9a24b;
+    --gold-light: #e8c878;
+    --cream: #fbf6ea;
+    --ink: #1c1c1c;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-dark) 70%);
+    color: var(--cream);
+    font-family: 'IBM Plex Sans Arabic', 'Cairo', Tahoma, Arial, sans-serif;
+    direction: rtl;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: max(28px, env(safe-area-inset-top)) 20px 40px;
+  }
+  .hero {
+    text-align: center;
+    margin-bottom: 34px;
+  }
+  .hero .sadu-strip {
+    height: 10px;
+    background: repeating-linear-gradient(-45deg, var(--gold) 0 10px, transparent 10px 20px);
+    opacity: 0.7;
+    margin: 0 auto 22px;
+    max-width: 220px;
+    border-radius: 4px;
+  }
+  .hero h1 {
+    font-family: 'Aref Ruqaa', serif;
+    font-size: 44px;
+    color: var(--gold-light);
+    margin: 0 0 8px;
+    letter-spacing: 1px;
+  }
+  .hero p {
+    font-size: 14px;
+    color: rgba(251,246,234,0.7);
+    margin: 0;
+  }
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+  }
+  .game-card {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    color: var(--cream);
+    background: linear-gradient(160deg, var(--felt-light), var(--felt));
+    border: 1px solid rgba(243,210,122,0.35);
+    border-radius: var(--radius);
+    padding: 28px 16px 20px;
+    text-align: center;
+    overflow: hidden;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .game-card:active { transform: scale(0.97); border-color: var(--gold); }
+  .game-card .glyph {
+    font-size: 40px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .game-card h2 {
+    font-family: 'Aref Ruqaa', serif;
+    font-size: 24px;
+    margin: 0 0 4px;
+    color: var(--gold-light);
+  }
+  .game-card .desc {
+    font-size: 12px;
+    color: rgba(251,246,234,0.65);
+    margin: 0;
+  }
+  .game-card .badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    font-size: 10px;
+    padding: 2px 8px;
+    color: var(--gold-light);
+  }
+  .game-card.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .placeholder-card {
+    border-style: dashed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(251,246,234,0.35);
+    font-size: 13px;
+    min-height: 120px;
+  }
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 11px;
+    color: rgba(251,246,234,0.35);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="sadu-strip"></div>
+    <h1>يلا ورق</h1>
+    <p>منصة الألعاب الورقية الخليجية</p>
+  </div>
+
+  <div class="game-grid">
+    <a class="game-card" href="./hand/index.html">
+      <span class="glyph">🃏</span>
+      <h2>الهند</h2>
+      <p class="desc">لعبة ورق تقليدية، 4 لاعبين</p>
+    </a>
+
+    <a class="game-card" href="./baloot/index.html">
+      <span class="glyph">♠️</span>
+      <h2>البلوت</h2>
+      <p class="desc">فريقين، صن وحكم، 152 نقطة</p>
+    </a>
+
+    <div class="game-card placeholder-card">قريباً...</div>
+  </div>
+
+  <footer>يلا ورق — 2026</footer>
+
+</div>
+</body>
+</html>
