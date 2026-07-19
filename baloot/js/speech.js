@@ -51,3 +51,12 @@ export const BID_SPEECH = {
   FOUR: "فور",
   KAHWA: "خمسة",
 };
+
+/// كلمات إعلان المشاريع - كل لاعب ينطق اسم مشروعه بس (بدون كشف الورق)، زي اللعب الحقيقي
+export const PROJECT_SPEECH = {
+  sira: "سِرا",
+  khamseen: "خمسين",
+  mia: "مية",
+  arbaamia: "أربعمية",
+  baloot: "بلوت",
+};

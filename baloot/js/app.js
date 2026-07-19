@@ -5,7 +5,7 @@ import { Suit, Rank, rankDisplayName } from "./models.js";
 import { ProjectType } from "./projects.js";
 import { aiDecideBid, aiChooseCard, aiDecideDouble } from "./ai.js";
 import { computeRawCardPoints } from "./scoring.js";
-import { speak, BID_SPEECH } from "./speech.js";
+import { speak, BID_SPEECH, PROJECT_SPEECH } from "./speech.js";
 
 const HUMAN_ID = "human";
 // ترتيب فيزيائي بعقارب الساعة: أنت(أسفل) -> سالم(يسار) -> خالد(فوق، شريكك) -> فهد(يمين) -> رجوع لك
@@ -545,10 +545,26 @@ $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").c
 
 const TRICK_PAUSE_MS = 2500; // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح
 
+/// كل لاعب معه مشروع يعلنه بفقاعة كلام فوق صورته + صوت - بترتيب متتابع (900ms بينهم) عشان الأصوات ما تتقاطع
+function announceProjectsSequentially() {
+  if (!match.projectEntries) return;
+  const withProjects = match.projectEntries.filter((e) => e.project);
+  withProjects.forEach((entry, i) => {
+    setTimeout(() => {
+      if (!match) return;
+      const name = PROJECT_NAME_AR[entry.project.type];
+      showChatBubble(entry.playerID, name);
+      speak(PROJECT_SPEECH[entry.project.type] ?? name);
+    }, i * 900);
+  });
+}
+
 function afterAction() {
   render();
   if (match.phase === "playing" && match.tricksWon.length === 0 && !match.projectsResolved) {
     match.resolveProjects();
+    announceProjectsSequentially();
+    render(); // نعيد الرندر عشان شريط المشاريع يعكس النتيجة فوراً
   }
   if (match.completedTrick) {
     // شوط اكتمل للتو - ننتظر وقفة واضحة قبل ما نكسحه ونكمل اللعب، عشان كل لاعب يشوف الأربع ورقات كاملة
