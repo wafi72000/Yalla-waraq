@@ -13,23 +13,25 @@ function checkThrows(name, fn) {
 
 // ===== الدبل ما يصير بالصن إطلاقاً =====
 {
-  const d = new DoublingState("teamA", "teamB", false, 50); // isHukm=false (صن)
+  const d = new DoublingState("teamA", "teamB", false); // isHukm=false (صن)
   checkThrows("طلب دبل بنظام الصن يُرفض", () => d.requestNextLevel("teamB"));
 }
 
-// ===== شرط الـ100: المشتري لازم أقل من 100 =====
+// ===== دبل الحكم مفتوح دائماً - بدون أي شرط نقاط (بخلاف دبل الصن اللي له شرط الـ100 المنفصل) =====
 {
-  const d = new DoublingState("teamA", "teamB", true, 100);
-  checkThrows("رصيد المشتري 100+ يمنع فتح الدبل", () => d.requestNextLevel("teamB"));
+  const d = new DoublingState("teamA", "teamB", true); // رصيد المشتري 100+ (لا يهم)
+  check("دبل الحكم يفتح حتى مع رصيد مشتري مرتفع جداً", d.canOpenDouble(), true);
+  const level = d.requestNextLevel("teamB");
+  check("الدبل ينجح فوراً بدون أي قيد نقاط", level, 1);
 }
 {
-  const d = new DoublingState("teamA", "teamB", true, 99);
-  check("رصيد المشتري 99 يسمح بفتح الدبل", d.canOpenDouble(), true);
+  const d = new DoublingState("teamA", "teamB", true); // رصيد المشتري 0 (بداية المباراة)
+  check("دبل الحكم يفتح حتى برصيد صفر", d.canOpenDouble(), true);
 }
 
 // ===== سلسلة كاملة: دبل(خصم) → ثري(مشتري) → فور(خصم) → خمسة(مشتري) =====
 {
-  const d = new DoublingState("teamA", "teamB", true, 50); // teamA=مشتري، teamB=خصم
+  const d = new DoublingState("teamA", "teamB", true); // teamA=مشتري، teamB=خصم
   const l1 = d.requestNextLevel("teamB");
   check("دبل يطلبه الخصم، المستوى=1", l1, DoubleLevel.DOUBLE);
   check("المعامل بعد الدبل = 2", d.multiplier, 2);
@@ -54,7 +56,7 @@ function checkThrows(name, fn) {
 
 // ===== الفريق الخطأ يطلب المستوى - يُرفض =====
 {
-  const d = new DoublingState("teamA", "teamB", true, 50);
+  const d = new DoublingState("teamA", "teamB", true);
   checkThrows("المشتري ما يقدر يبدأ الدبل (الخصم هو اللي يبدأ)", () => d.requestNextLevel("teamA"));
 }
 

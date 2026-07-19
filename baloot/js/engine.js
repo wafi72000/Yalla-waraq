@@ -100,7 +100,7 @@ export class BalootMatch {
     this._setupBalootEligibility();
 
     if (this.isHukm) {
-      this.doubling = new DoublingState(this.buyerTeam, this.opponentTeam, true, this.cumulativeScores[this.buyerTeam]);
+      this.doubling = new DoublingState(this.buyerTeam, this.opponentTeam, true);
       this.phase = "doubling"; // نافذة الدبل قبل أول رمية
     } else {
       // صن (بأي طريقة وصلنا له - شراء مباشر، رفع حكم معلّق، أو اشكل) - نفحص شرط دبل الصن المنفصل

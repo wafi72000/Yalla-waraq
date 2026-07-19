@@ -18,13 +18,12 @@ export const DOUBLE_MULTIPLIER = {
   [DoubleLevel.KAHWA]: 5, // بالتسمية بس - عملياً قهوة تنهي المباراة قبل ما يهم المعامل الرقمي
 };
 
-/// buyerTeamID / opponentTeamID: معرّفات الفريقين. trumpChoice: هل نوع اللعب "حكم" (الدبل بالحكم فقط)
+/// buyerTeamID / opponentTeamID: معرّفات الفريقين. isHukm: هل نوع اللعب "حكم" (الدبل بالحكم فقط، ومفتوح دائماً بدون شرط نقاط)
 export class DoublingState {
-  constructor(buyerTeamID, opponentTeamID, isHukm, buyerCumulativeScore) {
+  constructor(buyerTeamID, opponentTeamID, isHukm) {
     this.buyerTeamID = buyerTeamID;
     this.opponentTeamID = opponentTeamID;
     this.isHukm = isHukm;
-    this.buyerCumulativeScore = buyerCumulativeScore;
     this.level = DoubleLevel.NONE;
     this.isMatchEndingKahwa = false;
   }
@@ -33,18 +32,15 @@ export class DoublingState {
     return DOUBLE_MULTIPLIER[this.level];
   }
 
-  /// هل يصير فتح الدبل من الأساس (شرط الـ100 نقطة + كونها حكم)
+  /// دبل الحكم مفتوح دائماً - بدون أي شرط نقاط (بخلاف دبل الصن اللي له شرط الـ100 المنفصل بـSunDoublingState)
   canOpenDouble() {
-    return this.isHukm && this.buyerCumulativeScore < 100;
+    return this.isHukm;
   }
 
   /// requestingTeamID يطلب المستوى التالي بالسلسلة
   requestNextLevel(requestingTeamID) {
     if (!this.isHukm) {
       throw new HandRuleError("الدبل متاح فقط بنظام الحكم، ما يصير بالصن (دبل الصن نظام منفصل - راجع SunDoublingState)");
-    }
-    if (this.level === DoubleLevel.NONE && !this.canOpenDouble()) {
-      throw new HandRuleError("ما يصير فتح الدبل - رصيد المشتري وصل 100 أو أكثر");
     }
 
     const expectedTeam = this._teamAllowedToActNow();
