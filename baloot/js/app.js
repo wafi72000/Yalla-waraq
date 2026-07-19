@@ -385,6 +385,7 @@ function renderHand() {
   hand.forEach((card, index) => {
     const el = cardDisplay(card);
     if (index > 0) el.style.marginInlineStart = `${step - FIXED_CARD_WIDTH}px`; // سالب = تراكب جزئي، موجب/صفر = مسافة عادية
+    el.style.zIndex = String(hand.length - index); // كل ورقة تغطّي يمين التالية (مو يسارها) - يبقى رمز كل ورقة (أعلى يسارها) ظاهر
     if (!isMyTurn) {
       el.classList.add("not-playable"); // مو دورك - ما يصير تضغط عليها، بس تبقى بلونها الطبيعي (بدون تظليل)
     } else if (!isCardLegalForHuman(card)) {
