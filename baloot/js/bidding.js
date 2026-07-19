@@ -17,9 +17,11 @@ export const BidChoice = {
 export class BiddingState {
   /// seatOrder: مصفوفة player IDs بترتيب المزايدة (يمين، شريك الموزّع، يسار، الموزّع)
   /// flippedSuit: نوع الورقة المفروشة (لتحديد "حكم أول" لاحقاً)
-  constructor(seatOrder, flippedSuit) {
+  /// teamOfPlayer: دالة (playerID) => "A"|"B" - تلزم لتصفية الأزرار حسب زميل/خصم صاحب الحكم المعلّق
+  constructor(seatOrder, flippedSuit, teamOfPlayer) {
     this.seatOrder = seatOrder;
     this.flippedSuit = flippedSuit;
+    this.teamOfPlayer = teamOfPlayer;
     this.round = 1; // 1 أو 2
     this.turnIndex = 0;
     this.result = null; // { buyerID, choice, trumpSuit, isAshkal } بعد الشراء النهائي، أو null لسه
@@ -37,10 +39,24 @@ export class BiddingState {
     return idx === 2 || idx === 3; // index 2 = يسار الموزّع، index 3 = الموزّع
   }
 
-  /// الخيارات المتاحة للاعب الحالي بالجولة الحالية
+  /// الخيارات المتاحة للاعب الحالي بالجولة الحالية - تُفلتر حسب علاقته بصاحب الحكم المعلّق (زميل/خصم) لو موجود
   availableChoices() {
+    const playerID = this.currentPlayerID;
+
+    // لو فيه حكم معلّق، الخيارات تختلف جذرياً حسب زميل/خصم صاحبه
+    if (this.round === 1 && this.pendingHukm) {
+      const isPartner = this.teamOfPlayer(playerID) === this.teamOfPlayer(this.pendingHukm.buyerID);
+      if (isPartner) {
+        return [BidChoice.SUN, BidChoice.PASS]; // زميل المشتري: يقدر يرفع لصن بس، ما يشوف حكم/اشكل/دبل
+      }
+      // الخصم: يقدر يرفع لصن، أو يشتري حكم جديد، أو يمرر - وإشكال لو مؤهّل بموقعه (يسار/الموزّع)
+      const opponentChoices = [BidChoice.SUN, BidChoice.HUKM, BidChoice.PASS];
+      if (this.isEligibleForAshkal(playerID)) opponentChoices.splice(2, 0, BidChoice.ASHKAL);
+      return opponentChoices;
+    }
+
     const base = [BidChoice.HUKM, BidChoice.SUN, BidChoice.PASS];
-    if (this.round === 1 && this.isEligibleForAshkal(this.currentPlayerID)) {
+    if (this.round === 1 && this.isEligibleForAshkal(playerID)) {
       return [BidChoice.HUKM, BidChoice.SUN, BidChoice.ASHKAL, BidChoice.PASS];
     }
     return base;

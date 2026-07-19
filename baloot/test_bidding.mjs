@@ -14,16 +14,19 @@ function checkThrows(name, fn) {
 }
 
 const seatOrder = ["right", "partner", "left", "dealer"];
+// تمثيل فرق منطقي للاختبار (مقاعد متقابلة فعلياً بترتيب الجلوس الحقيقي): right+left فريق A، partner+dealer فريق B
+// ملاحظة: بترتيب المزايدة [يمين، شريك، يسار، الموزع]، الفرق الفعلية بالجلوس تتقابل (0+2) و(1+3)
+const testTeamOfPlayer = (id) => (id === "right" || id === "left") ? "A" : "B";
 
 // ===== ترتيب الدور صحيح: يمين، شريك، يسار، الموزّع =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   check("الدور يبدأ بيمين الموزّع", b.currentPlayerID, "right");
 }
 
 // ===== يمين وشريك الموزّع ما لهم خيار اشكل =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   check("يمين الموزّع ما عنده خيار اشكل", b.availableChoices().includes(BidChoice.ASHKAL), false);
   b.submitBid("right", BidChoice.PASS);
   check("شريك الموزّع ما عنده خيار اشكل", b.availableChoices().includes(BidChoice.ASHKAL), false);
@@ -31,7 +34,7 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== يسار الموزّع والموزّع نفسه عندهم خيار اشكل بالجولة الأولى =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   b.submitBid("right", BidChoice.PASS);
   b.submitBid("partner", BidChoice.PASS);
   check("يسار الموزّع عنده خيار اشكل", b.availableChoices().includes(BidChoice.ASHKAL), true);
@@ -41,13 +44,13 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== مو دورك يرفض =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   checkThrows("لاعب يحاول يزايد بغير دوره يُرفض", () => b.submitBid("partner", BidChoice.PASS));
 }
 
 // ===== القاعدة الجديدة: حكم بالجولة الأولى لا يقفل المزايدة فوراً - يصير معلّق =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   const r = b.submitBid("right", BidChoice.HUKM);
   check("حكم بالجولة الأولى لا يرجّع نتيجة نهائية فوراً (null)", r, null);
   check("لا يوجد result نهائي بعد", b.result, null);
@@ -57,7 +60,7 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== لو الكل مرّر بعد حكم معلّق، الحكم المعلّق يصير المشتري النهائي =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   b.submitBid("right", BidChoice.HUKM); // معلّق
   b.submitBid("partner", BidChoice.PASS);
   b.submitBid("left", BidChoice.PASS);
@@ -70,7 +73,7 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== الصن يلغي الحكم المعلّق ويقفل فوراً (السيناريو 4) =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   b.submitBid("right", BidChoice.HUKM); // right يشتري حكم أول - يصير معلّق
   const r = b.submitBid("partner", BidChoice.SUN); // partner يرفعها لصن
   check("الصن يقفل المزايدة فوراً حتى بوجود حكم معلّق", r.buyerID, "partner");
@@ -81,7 +84,7 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== حكم ثاني (لاعب لاحق) يستبدل الحكم المعلّق الأول =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   b.submitBid("right", BidChoice.HUKM); // right معلّق
   b.submitBid("partner", BidChoice.HUKM); // partner يشتري حكم كمان - يستبدل المعلّق
   check("الحكم المعلّق تحدّث لآخر لاعب اشترى", b.pendingHukm.buyerID, "partner");
@@ -90,20 +93,21 @@ const seatOrder = ["right", "partner", "left", "dealer"];
   check("انتهت الجولة والمشتري النهائي هو آخر حكم معلّق (partner)", r.buyerID, "partner");
 }
 
-// ===== اشكل (من آخر لاعبين) يلغي حكم معلّق ويقفل فوراً =====
+// ===== اشكل (من خصم صاحب الحكم المعلّق) يلغيه ويقفل فوراً =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
-  b.submitBid("right", BidChoice.HUKM); // معلّق
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
+  b.submitBid("right", BidChoice.HUKM); // معلّق - right فريق A
   b.submitBid("partner", BidChoice.PASS);
-  const r = b.submitBid("left", BidChoice.ASHKAL); // يسار الموزّع يرفعها بإشكال
-  check("الإشكال يقفل المزايدة فوراً ويلغي الحكم المعلّق", r.buyerID, "left");
+  b.submitBid("left", BidChoice.PASS); // left زميل right (نفس فريق A) - ما عنده إشكال أصلاً هنا (خيارات زميل فقط)
+  const r = b.submitBid("dealer", BidChoice.ASHKAL); // dealer خصم (فريق B) ومؤهّل للإشكال - يرفعها
+  check("الإشكال (من خصم) يقفل المزايدة فوراً ويلغي الحكم المعلّق", r.buyerID, "dealer");
   check("isAshkal = true", r.isAshkal, true);
   check("trumpSuit = null (زي الصن)", r.trumpSuit, null);
 }
 
 // ===== حكم ثاني: لازم إعلان صريح، ولازم يكون غير لون المفروشة (سلوك الجولة الثانية بدون تغيير) =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   b.submitBid("right", BidChoice.PASS);
   b.submitBid("partner", BidChoice.PASS);
   b.submitBid("left", BidChoice.PASS);
@@ -119,7 +123,7 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== الصكّة الميتة: كل الأربعة "بس"/"ولا" بالجولتين =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   for (const id of seatOrder) b.submitBid(id, BidChoice.PASS); // جولة أولى - صفر حكم معلّق
   for (const id of seatOrder) b.submitBid(id, BidChoice.PASS); // جولة ثانية
   check("صكّة ميتة بعد مرور الجولتين بدون شراء", b.isDead, true);
@@ -129,9 +133,22 @@ const seatOrder = ["right", "partner", "left", "dealer"];
 
 // ===== اشكل ما يصير بالجولة الثانية (حصري للجولة الأولى) =====
 {
-  const b = new BiddingState(seatOrder, Suit.HEARTS);
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
   for (const id of seatOrder) b.submitBid(id, BidChoice.PASS); // جولة أولى بدون شراء
   checkThrows("اشكل بالجولة الثانية يُرفض حتى ليسار الموزّع", () => b.submitBid("right", BidChoice.ASHKAL));
+}
+
+// ===== تصفية الأزرار: زميل صاحب الحكم المعلّق يشوف بس [صن، بس] - بدون حكم ولا اشكل =====
+{
+  const b = new BiddingState(seatOrder, Suit.HEARTS, testTeamOfPlayer);
+  b.submitBid("right", BidChoice.HUKM); // right (فريق A) معلّق
+  const partnerChoices = b.availableChoices(); // partner فريق B... انتظر partner دوره الآن
+  // partner هو الدور الحالي، لكنه فريق B (خصم right) - نتحقق من اختياراته أولاً
+  check("partner (خصم right) يشوف صن+حكم+بس", partnerChoices.sort(), [BidChoice.SUN, BidChoice.HUKM, BidChoice.PASS].sort());
+  b.submitBid("partner", BidChoice.PASS);
+  // الآن دور left - وهو زميل right (فريق A) لأن الفرق تتقابل
+  const leftChoices = b.availableChoices();
+  check("left (زميل right - نفس فريق A) يشوف صن+بس بس - بدون حكم ولا اشكل رغم موقعه المؤهّل أصلاً", leftChoices.sort(), [BidChoice.SUN, BidChoice.PASS].sort());
 }
 
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);

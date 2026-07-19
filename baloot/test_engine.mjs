@@ -155,6 +155,9 @@ function buyHukmAndFinalize(match, buyerID) {
     match.submitBid(order[0], BidChoice.PASS);
     match.submitBid(order[1], BidChoice.PASS);
     match.submitBid(order[2], BidChoice.SUN);
+    if (match.phase === "sunDoubling") {
+      match.decideSunDouble(match.opponentTeam, false); // الخصم يختار لعب عادي (يبسّط سيناريو الاختبار)
+    }
     match.resolveProjects();
     playFullHandAutomatically(match);
     handsPlayed++;
@@ -280,6 +283,25 @@ function buyHukmAndFinalize(match, buyerID) {
   check("المباراة انتهت فوراً بعد يد واحدة بس", match.matchOver, true);
   check("سبب الانتهاء = قهوة", match.matchEndReason.includes("قهوة"), true);
   check("فيه فائز محدّد رغم إن الرصيد التراكمي كان صفر-صفر قبل اليد", ["A", "B"].includes(match.matchWinner), true);
+}
+
+// ===== دبل الصن end-to-end: المشتري ≥100، الخصم <100 - يفتح نافذة قرار وحيد =====
+{
+  const match = freshMatch();
+  const order = match.currentSeatOrder;
+  match.cumulativeScores[match.teamOfPlayer(order[2])] = 100; // نضبط رصيد المشتري المستقبلي مسبقاً
+  match.submitBid(order[0], BidChoice.PASS);
+  match.submitBid(order[1], BidChoice.PASS);
+  match.submitBid(order[2], BidChoice.SUN);
+  check("شراء الصن مع رصيد المشتري 100+ يفتح نافذة دبل الصن", match.phase, "sunDoubling");
+  check("sunDoubling.canOffer() = true", match.sunDoubling.canOffer(), true);
+
+  match.decideSunDouble(match.opponentTeam, true); // الخصم يقرر يدبل
+  check("بعد القرار، المرحلة تنتقل للعب مباشرة", match.phase, "playing");
+  check("معامل دبل الصن = 2", match.sunDoubling.multiplier, 2);
+
+  playFullHandAutomatically(match);
+  check("اليد اكتملت مع دبل الصن الفعّال", match.phase, "handOver");
 }
 
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);

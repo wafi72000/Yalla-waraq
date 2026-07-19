@@ -4,7 +4,7 @@ import { HandRuleError } from "./deal.js";
 import { dealInitial, completeDealAfterPurchase } from "./deal.js";
 import { BiddingState, BidChoice } from "./bidding.js";
 import { validatePlay, determineTrickWinner } from "./trick.js";
-import { DoublingState } from "./doubling.js";
+import { DoublingState, SunDoublingState } from "./doubling.js";
 import { detectBestProject, resolveProjectPriority } from "./projects.js";
 import { scoreHand, PendingPot } from "./scoring.js";
 
@@ -53,9 +53,10 @@ export class BalootMatch {
     this.hands = dealt.hands;
     this.flippedCard = dealt.flippedCard;
     this._remainingDeckAfterInitial = dealt.remainingDeck;
-    this.bidding = new BiddingState(seatOrder, this.flippedCard.suit);
+    this.bidding = new BiddingState(seatOrder, this.flippedCard.suit, this.teamOfPlayer);
     this.phase = "bidding";
     this.doubling = null;
+    this.sunDoubling = null;
     this.tricksWon = []; // [{playerID, cards}]
     this.currentTrick = []; // [{playerID, card}] الشوط الجاري
     this.projectsAnnounced = new Map(); // playerID -> project object (بعد الكشف الفعلي)
@@ -101,10 +102,31 @@ export class BalootMatch {
       this.doubling = new DoublingState(this.buyerTeam, this.opponentTeam, true, this.cumulativeScores[this.buyerTeam]);
       this.phase = "doubling"; // نافذة الدبل قبل أول رمية
     } else {
-      this.phase = "playing";
-      this._firstPlayerID = this.currentSeatOrder[0]; // يمين الموزّع يبدأ الرمي
-      this.turnPlayerID = this._firstPlayerID;
+      // صن (بأي طريقة وصلنا له - شراء مباشر، رفع حكم معلّق، أو اشكل) - نفحص شرط دبل الصن المنفصل
+      const sunDoubling = new SunDoublingState(
+        this.buyerTeam, this.opponentTeam,
+        this.cumulativeScores[this.buyerTeam], this.cumulativeScores[this.opponentTeam]
+      );
+      if (sunDoubling.canOffer()) {
+        this.sunDoubling = sunDoubling;
+        this.phase = "sunDoubling"; // نافذة قرار وحيد للخصم: دبل صن أو لعب عادي
+      } else {
+        this.phase = "playing";
+        this._firstPlayerID = this.currentSeatOrder[0];
+        this.turnPlayerID = this._firstPlayerID;
+      }
     }
+  }
+
+  // ===== دبل الصن (منفصل تماماً عن دبل الحكم) =====
+
+  /// الخصم يقرر: doubled=true (دبل صن ×2) أو false (لعب عادي) - قرار وحيد نهائي
+  decideSunDouble(teamID, doubled) {
+    if (this.phase !== "sunDoubling") throw new HandRuleError("نافذة دبل الصن مغلقة الحين");
+    this.sunDoubling.decide(teamID, doubled);
+    this.phase = "playing";
+    this._firstPlayerID = this.currentSeatOrder[0];
+    this.turnPlayerID = this._firstPlayerID;
   }
 
   // ===== الدبل (بس بالحكم) =====
@@ -260,7 +282,7 @@ export class BalootMatch {
       teamOfPlayer: this.teamOfPlayer,
       buyerTeam: this.buyerTeam,
       projectPointsByTeam: this.projectPoints ?? { A: 0, B: 0 },
-      doubleMultiplier: this.doubling?.multiplier ?? 1,
+      doubleMultiplier: this.doubling?.multiplier ?? this.sunDoubling?.multiplier ?? 1,
       balootPointsByTeam,
     });
 

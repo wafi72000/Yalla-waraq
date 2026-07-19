@@ -84,6 +84,7 @@ function render() {
   renderCenterArea();
   renderBiddingBar();
   renderDoublingBar();
+  renderSunDoublingBar();
   renderProjectsBar();
   renderHand();
   renderBalootButton();
@@ -279,6 +280,51 @@ function renderDoublingBar() {
     afterAction();
   });
   choicesEl.appendChild(proceedBtn);
+}
+
+/// نافذة دبل الصن - منفصلة تماماً عن دبل الحكم: قرار وحيد يخص الخصم بس، بدون أي رد من المشتري
+function renderSunDoublingBar() {
+  const bar = $("sunDoublingBar");
+  if (match.phase !== "sunDoubling") { bar.classList.add("hidden"); return; }
+
+  const humanTeam = teamOfPlayer(HUMAN_ID);
+  bar.classList.remove("hidden");
+  const choicesEl = $("sunDoublingChoices");
+  choicesEl.innerHTML = "";
+
+  if (humanTeam !== match.opponentTeam) {
+    $("sunDoublingTitle").textContent = "الخصم يقرر: دبل صن أو لعب عادي...";
+    return;
+  }
+
+  $("sunDoublingTitle").textContent = "رصيدك يخوّلك دبل الصن (×2) - قرار وحيد، بدون رد من المشتري";
+
+  const doubleBtn = document.createElement("button");
+  doubleBtn.className = "double-btn";
+  doubleBtn.textContent = "دبل صن (×2)";
+  doubleBtn.addEventListener("click", () => {
+    try {
+      match.decideSunDouble(humanTeam, true);
+      speak(BID_SPEECH.DOUBLE);
+      afterAction();
+    } catch (e) {
+      showToast(e.message);
+    }
+  });
+  choicesEl.appendChild(doubleBtn);
+
+  const normalBtn = document.createElement("button");
+  normalBtn.className = "double-btn";
+  normalBtn.textContent = "لعب عادي";
+  normalBtn.addEventListener("click", () => {
+    try {
+      match.decideSunDouble(humanTeam, false);
+      afterAction();
+    } catch (e) {
+      showToast(e.message);
+    }
+  });
+  choicesEl.appendChild(normalBtn);
 }
 
 // ===== يد اللاعب =====
@@ -559,6 +605,28 @@ function maybeRunAI() {
       }, 700);
     }
     // لو دور فريق الإنسان، ننتظر تفاعله عبر renderDoublingBar (ما نسوي شي هنا)
+    return;
+  }
+
+  if (match.phase === "sunDoubling") {
+    const humanTeam = teamOfPlayer(HUMAN_ID);
+    if (match.opponentTeam !== humanTeam) {
+      // فريق AI هو الخصم - يقرر تلقائياً (معيار بسيط: يدبل لو متأخر بوضوح، غير كذا يلعب عادي)
+      setTimeout(() => {
+        if (match.phase !== "sunDoubling") return;
+        const myScore = match.cumulativeScores[match.opponentTeam];
+        const theirScore = match.cumulativeScores[match.buyerTeam];
+        const desperate = theirScore - myScore >= 100; // نفس معيار الجرأة بالحكم - نجازف لو متأخرين جداً
+        try {
+          match.decideSunDouble(match.opponentTeam, desperate);
+          if (desperate) speak(BID_SPEECH.DOUBLE);
+          afterAction();
+        } catch (e) {
+          console.error("[AI sunDouble]", e);
+        }
+      }, 700);
+    }
+    // لو دور فريق الإنسان (هو الخصم)، ننتظر تفاعله عبر renderSunDoublingBar
     return;
   }
 
