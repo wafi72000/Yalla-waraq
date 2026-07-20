@@ -203,11 +203,14 @@ function renderSeatsActiveTurn() {
   for (const id of AI_IDS) {
     $(SEAT_ELEMENT_ID[id]).classList.remove("active-turn");
   }
+  $("humanAvatarWrap").classList.remove("active-turn");
   let activeID = null;
   if (match.phase === "bidding" && !match.bidding.isDead) activeID = match.bidding.currentPlayerID;
   else if (match.phase === "playing") activeID = match.turnPlayerID;
   if (activeID && AI_IDS.includes(activeID)) {
     $(SEAT_ELEMENT_ID[activeID]).classList.add("active-turn");
+  } else if (activeID === HUMAN_ID) {
+    $("humanAvatarWrap").classList.add("active-turn");
   }
 }
 

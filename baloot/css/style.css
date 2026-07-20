@@ -107,6 +107,9 @@ html, body {
 .seat.active-turn .avatar {
   box-shadow: 0 0 0 3px var(--gold-light), 0 0 14px 3px var(--gold-light);
 }
+.human-avatar-wrap.active-turn .avatar {
+  box-shadow: 0 0 0 3px var(--gold-light), 0 0 14px 3px var(--gold-light);
+}
 .seat-name { font-size: 11px; color: rgba(251,246,234,0.85); }
 .card-back-count {
   font-size: 10px;
@@ -116,6 +119,19 @@ html, body {
   padding: 1px 7px;
 }
 .card-back-count:empty { display: none; }
+
+.human-avatar-wrap {
+  display: flex;
+  justify-content: center;
+}
+.human-avatar-wrap .avatar {
+  width: 64px;
+  height: 30px;
+  border-radius: 32px 32px 0 0; /* نصف دائرة - كأنها طالعة من وراء الورق تحتها */
+  border-bottom: none;
+  font-size: 12px;
+  padding-top: 3px;
+}
 
 .buyer-badge {
   font-family: 'Aref Ruqaa', serif;
@@ -262,7 +278,7 @@ html, body {
 /* ===== يد اللاعب ===== */
 .hand-area {
   flex-shrink: 0;
-  height: 178px;
+  height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
