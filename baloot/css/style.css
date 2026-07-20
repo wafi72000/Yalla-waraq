@@ -117,6 +117,17 @@ html, body {
 }
 .card-back-count:empty { display: none; }
 
+.buyer-badge {
+  font-family: 'Aref Ruqaa', serif;
+  font-size: 12px;
+  color: #1a1408;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  border-radius: 8px;
+  padding: 1px 8px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 /* ===== مروحة الورق - تحيط بصورة اللاعب مباشرة، موجّهة نحو الطاولة ===== */
 .avatar-wrap {
   position: relative;
@@ -170,7 +181,16 @@ html, body {
   gap: 8px;
   width: 100%;
 }
-.flipped-card-zone, .trick-zone {
+.flipped-card-zone {
+  position: relative;
+  width: 100px;
+  height: 145px;
+}
+.flipped-card-zone .card {
+  width: 100px;
+  height: 145px;
+}
+.trick-zone {
   position: relative;
   width: 140px;
   height: 90px;

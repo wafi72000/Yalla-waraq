@@ -130,6 +130,7 @@ function render() {
   renderSeatsActiveTurn();
   renderCardBacks();
   renderCenterArea();
+  renderBuyerBadge();
   renderBiddingBar();
   renderDoublingBar();
   renderSunDoublingBar();
@@ -137,6 +138,30 @@ function render() {
   renderBalootButton();
   renderOverlays();
   announceBiddingRoundIfNew();
+}
+
+/// شارة دائمة تحت صورة المشتري (صن/حكم♥) تبقى طول اليد - بدل فقاعة مؤقتة تختفي بعد ثوانٍ
+function renderBuyerBadge() {
+  const badges = {
+    khaled: $("topBuyerBadge"),
+    salem: $("leftBuyerBadge"),
+    fahad: $("rightBuyerBadge"),
+    human: $("humanBuyerBadge"),
+  };
+  const showBadge = ["playing", "doubling", "sunDoubling", "handOver"].includes(match.phase) && match.buyerID;
+  if (!showBadge) {
+    for (const el of Object.values(badges)) el.classList.add("hidden");
+    return;
+  }
+  const label = match.isHukm ? `حكم ${SUIT_SYMBOL[match.trumpSuit]}` : "صن";
+  for (const [id, el] of Object.entries(badges)) {
+    if (id === match.buyerID) {
+      el.textContent = label;
+      el.classList.remove("hidden");
+    } else {
+      el.classList.add("hidden");
+    }
+  }
 }
 
 function renderScores() {
