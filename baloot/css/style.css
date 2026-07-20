@@ -474,7 +474,7 @@ html, body {
 
 .quick-chat-bar {
   position: fixed;
-  bottom: max(140px, calc(env(safe-area-inset-bottom) + 140px));
+  bottom: max(270px, calc(env(safe-area-inset-bottom) + 270px));
   left: 10px;
   z-index: 65;
   display: flex;
@@ -517,7 +517,7 @@ html, body {
 
 .projects-check-bar {
   position: fixed;
-  bottom: max(140px, calc(env(safe-area-inset-bottom) + 140px));
+  bottom: max(270px, calc(env(safe-area-inset-bottom) + 270px));
   right: 10px;
   z-index: 65;
   display: flex;
