@@ -62,6 +62,7 @@ function announceBiddingRoundIfNew() {
 function newMatch() {
   match = new BalootMatch(baseSeatOrder, teamOfPlayer);
   balootAnnounceActive = false;
+  match._projectsRevealed = false;
   render();
   playDealingAnimation();
   maybeRunAI();
@@ -583,6 +584,7 @@ $("nextHandBtn").addEventListener("click", () => {
   balootAnnounceActive = false;
   match.advanceToNextHand();
   match._lastSpokenRound = null;
+  match._projectsRevealed = false;
   render();
   playDealingAnimation();
   maybeRunAI();
@@ -594,6 +596,7 @@ $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").c
 const TRICK_PAUSE_MS = 2500; // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح
 
 /// كل لاعب معه مشروع يعلنه بفقاعة كلام فوق صورته + صوت - بترتيب متتابع (900ms بينهم) عشان الأصوات ما تتقاطع
+/// هذا يصير بالجولة (الشوط) الأولى بس - الكشف الفعلي للورق يتأخر للجولة الثانية (انظر revealWinningProjectCards)
 function announceProjectsSequentially() {
   if (!match.projectEntries) return;
   const withProjects = match.projectEntries.filter((e) => e.project);
@@ -605,10 +608,6 @@ function announceProjectsSequentially() {
       speak(PROJECT_SPEECH[entry.project.type] ?? name);
     }, i * 900);
   });
-  // بعد ما يخلص الكل يعلن اسمه، صاحب أقوى مشروع يكشف ورقه فعلياً للجميع (زي القانون الحقيقي بالضبط)
-  if (match.winningProjectEntry) {
-    setTimeout(() => revealWinningProjectCards(match.winningProjectEntry), withProjects.length * 900 + 300);
-  }
 }
 
 /// يعرض ورق صاحب أقوى مشروع فعلياً (صور حقيقية) لمدة كافية، فوق مقعده - يثبت للجميع صحة مشروعه
@@ -656,8 +655,14 @@ function afterAction() {
       animateTrickCollection(match.turnPlayerID); // الفائز بالشوط (turnPlayerID محدّث له أصلاً بالمحرك)
       setTimeout(() => {
         if (!match || !match.completedTrick) return;
+        const justFinishedFirstTrick = match.tricksWon.length === 1;
         match.clearCompletedTrick();
         render();
+        // بداية الجولة الثانية بالضبط - صاحب أقوى مشروع يكشف ورقه فعلياً هنا (مو بالجولة الأولى وقت الإعلان)
+        if (justFinishedFirstTrick && match.winningProjectEntry && !match._projectsRevealed) {
+          match._projectsRevealed = true;
+          revealWinningProjectCards(match.winningProjectEntry);
+        }
         maybeRunAI();
       }, COLLECT_ANIM_MS);
     }, Math.max(0, TRICK_PAUSE_MS - COLLECT_ANIM_MS));
@@ -738,6 +743,7 @@ function maybeRunAI() {
     setTimeout(() => {
       match.advanceToNextHand();
       match._lastSpokenRound = null;
+      match._projectsRevealed = false;
       render();
       playDealingAnimation();
       maybeRunAI();
