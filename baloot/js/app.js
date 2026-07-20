@@ -2,7 +2,7 @@ import { BalootMatch, HandRuleError, projectPointsOf } from "./engine.js";
 import { BidChoice } from "./bidding.js";
 import { DoubleLevel } from "./doubling.js";
 import { Suit, Rank, rankDisplayName } from "./models.js";
-import { ProjectType } from "./projects.js";
+import { ProjectType, detectBestProject } from "./projects.js";
 import { aiDecideBid, aiChooseCard, aiDecideDouble } from "./ai.js";
 import { computeRawCardPoints } from "./scoring.js";
 import { speak, BID_SPEECH, PROJECT_SPEECH } from "./speech.js";
@@ -136,6 +136,7 @@ function render() {
   renderSunDoublingBar();
   renderHand();
   renderBalootButton();
+  renderProjectsCheckButton();
   renderOverlays();
   announceBiddingRoundIfNew();
 }
@@ -451,6 +452,11 @@ function applyDynamicCardSize(row, cardCount) {
 }
 
 const handCardElements = new Map(); // card.id -> DOM element - يُعاد استخدامها بين الرندرات، ما تُهدم إلا لو الورقة خرجت فعلياً من اليد
+let selectedCardID = null; // الورقة "المرفوعة" حالياً (ضغطة أولى) - ضغطة ثانية عليها ترميها بالميدان فعلياً
+
+const ARC_ANGLE_STEP = 3.5; // درجة دوران لكل خطوة عن المنتصف - يعطي القوس الخفيف
+const ARC_RAISE_STEP = 3;   // بكسل انخفاض لكل خطوة عن المنتصف (المنتصف أعلى نقطة، الأطراف أوطى شوي)
+const SELECT_LIFT_PX = 18;  // كم ترتفع الورقة وقت اختيارها (ضغطة أولى) قبل رميها
 
 function renderHand() {
   const isMyTurnNow = match.phase === "playing" && match.turnPlayerID === HUMAN_ID;
@@ -472,6 +478,7 @@ function renderHand() {
   for (const [id, el] of handCardElements) {
     if (!currentIds.has(id)) { el.remove(); handCardElements.delete(id); }
   }
+  if (selectedCardID && !currentIds.has(selectedCardID)) selectedCardID = null; // الورقة المختارة اتلعبت أو خرجت - نصفّر الاختيار
 
   hand.forEach((card, index) => {
     let el = handCardElements.get(card.id);
@@ -482,14 +489,31 @@ function renderHand() {
       el.className = "card card-image"; // نصفّر الفئات (not-playable/illegal القديمة) قبل نعيد تطبيقها بالأسفل - العنصر نفسه والصورة تبقى بدون إعادة تحميل
     }
     el.style.marginInlineStart = index > 0 ? `${step - FIXED_CARD_WIDTH}px` : "0";
-    el.style.zIndex = String(hand.length - index); // كل ورقة تغطّي يمين التالية (مو يسارها) - يبقى رمز كل ورقة (أعلى يسارها) ظاهر
-    el.onclick = null; // نمسح أي مستمع سابق (لو كانت الورقة قابلة للعب بالرندر الماضي) قبل نقرر من جديد
+
+    // القوس الخفيف: كل ورقة تدور شوي وترتفع/تنخفض حسب بعدها عن منتصف اليد - يحاكي مروحة ورق حقيقية بإيدك
+    const offsetFromCenter = index - (hand.length - 1) / 2;
+    const angle = offsetFromCenter * ARC_ANGLE_STEP;
+    const arcDrop = Math.abs(offsetFromCenter) * ARC_RAISE_STEP;
+    const isSelected = card.id === selectedCardID;
+    const lift = isSelected ? -SELECT_LIFT_PX : 0;
+    el.style.transform = `rotate(${angle}deg) translateY(${arcDrop + lift}px)`;
+    el.style.zIndex = isSelected ? "999" : String(hand.length - index); // الورقة المرفوعة تعلو فوق أي تراكب مجاور
+
+    el.onclick = null; // نمسح أي مستمع سابق قبل نقرر من جديد
     if (!isMyTurn) {
       el.classList.add("not-playable");
     } else if (!isCardLegalForHuman(card)) {
       el.classList.add("not-playable", "illegal");
     } else {
-      el.onclick = () => onHumanPlayCard(card);
+      el.onclick = () => {
+        if (selectedCardID === card.id) {
+          selectedCardID = null;
+          onHumanPlayCard(card); // ضغطة ثانية على نفس الورقة المرفوعة - ترميها فعلياً
+        } else {
+          selectedCardID = card.id; // ضغطة أولى - بس ترفعها، ما ترميها
+          renderHand();
+        }
+      };
     }
     row.appendChild(el); // appendChild لعنصر موجود أصلاً بس ينقل ترتيبه - ما يهدمه ولا يعيد تحميل الصورة
   });
@@ -641,6 +665,52 @@ function renderChatPhrases() {
   }
 }
 renderChatPhrases();
+
+// ===== زر "المشاريع" التفاعلي - تختار مشروعك بنفسك، والنظام يتحقق فعلياً (بدل الكشف التلقائي بس) =====
+
+$("projectsCheckToggleBtn").addEventListener("click", () => {
+  $("projectsCheckMenu").classList.toggle("hidden");
+});
+
+/// يعيد بناء قائمة أنواع المشاريع الممكنة - أربعمية تظهر بس بالصن (قاعدة أربعة آسات صن فقط)
+function renderProjectsCheckMenu() {
+  const menu = $("projectsCheckMenu");
+  menu.innerHTML = "";
+  const types = match?.isHukm
+    ? [ProjectType.SIRA, ProjectType.KHAMSEEN, ProjectType.MIA]
+    : [ProjectType.SIRA, ProjectType.KHAMSEEN, ProjectType.MIA, ProjectType.ARBAAMIA];
+  const points = { [ProjectType.SIRA]: 20, [ProjectType.KHAMSEEN]: 50, [ProjectType.MIA]: 100, [ProjectType.ARBAAMIA]: 400 };
+  for (const type of types) {
+    const btn = document.createElement("button");
+    btn.className = "chat-phrase-btn";
+    btn.textContent = `${PROJECT_NAME_AR[type]} (${points[type]})`;
+    btn.addEventListener("click", () => onProjectCheckSelected(type));
+    menu.appendChild(btn);
+  }
+}
+
+/// يتحقق فعلياً: هل يدّك تحتوي المشروع اللي اخترته؟ (يقارن بأقوى مشروع فعلي بيدّك، نفس منطق الكشف التلقائي)
+function onProjectCheckSelected(chosenType) {
+  $("projectsCheckMenu").classList.add("hidden");
+  if (!match?.hands?.has(HUMAN_ID)) return;
+  const actual = detectBestProject(match.hands.get(HUMAN_ID), match.isHukm);
+  if (actual && actual.type === chosenType) {
+    showToast(`✅ صحيح! عندك ${PROJECT_NAME_AR[chosenType]}`);
+    showChatBubble(HUMAN_ID, PROJECT_NAME_AR[chosenType]);
+    speak(PROJECT_SPEECH[chosenType] ?? PROJECT_NAME_AR[chosenType]);
+  } else {
+    showToast(`❌ ما عندك ${PROJECT_NAME_AR[chosenType]}`);
+  }
+}
+
+/// الزر يظهر بس بالجولة الأولى (قبل اكتمال أول شوط) - نفس نافذة الإعلان الحقيقية بالقانون
+function renderProjectsCheckButton() {
+  const bar = $("projectsCheckBar");
+  const shouldShow = match && match.phase === "playing" && match.tricksWon.length === 0;
+  bar.classList.toggle("hidden", !shouldShow);
+  if (shouldShow) renderProjectsCheckMenu();
+  else $("projectsCheckMenu").classList.add("hidden");
+}
 
 $("startMatchBtn").addEventListener("click", newMatch);
 $("nextHandBtn").addEventListener("click", () => {

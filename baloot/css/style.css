@@ -507,6 +507,18 @@ html, body {
 }
 .chat-phrase-btn:hover { background: rgba(255,255,255,0.08); }
 
+.projects-check-bar {
+  position: fixed;
+  bottom: max(140px, calc(env(safe-area-inset-bottom) + 140px));
+  right: 10px;
+  z-index: 65;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 6px;
+}
+.projects-check-bar.hidden { display: none; }
+
 /* ===== أنيميشن توزيع الورق ===== */
 .deal-fx-layer {
   position: fixed;

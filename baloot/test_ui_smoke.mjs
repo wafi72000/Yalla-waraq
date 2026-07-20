@@ -92,6 +92,9 @@ check("توصّلنا لدور فعلي للإنسان بالرمي (ورقة غ
 if (enabledCard) {
   const cardIdBefore = enabledCard.dataset.cardId;
   const handCountBefore = document.querySelectorAll("#handRow .card").length;
+  // الآن يحتاج ضغطتين: الأولى ترفع الورقة (اختيار)، الثانية على نفس الورقة ترميها فعلياً
+  enabledCard.dispatchEvent(new window.Event("click", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 100));
   enabledCard.dispatchEvent(new window.Event("click", { bubbles: true }));
   await new Promise((r) => setTimeout(r, 200));
 
