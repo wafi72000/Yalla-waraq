@@ -218,16 +218,26 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 8px;
+}
+.action-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  width: 100%;
+  min-height: 64px; /* الإطار نفسه ثابت دايماً - يبقى ظاهر حتى بدون أي محتوى بداخله */
 }
 .bidding-bar, .doubling-bar, .hukm-suit-picker, .projects-bar {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--gold);
-  border-radius: var(--radius);
-  padding: 7px 10px;
   width: 100%;
 }
 .bidding-bar.hidden, .doubling-bar.hidden, .hukm-suit-picker.hidden, .projects-bar.hidden { display: none; }
