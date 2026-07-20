@@ -38,6 +38,7 @@ export function speak(text) {
 /// كلمات المزايدة والدبل الجاهزة - نفس القائمة المتفق عليها بالضبط
 export const BID_SPEECH = {
   ROUND_FIRST: "أول",
+  TURN: "دورك",
   ROUND_SECOND: "ثاني",
   SUN: "صن",
   HUKM: "حكم",

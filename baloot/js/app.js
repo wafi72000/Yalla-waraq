@@ -63,6 +63,7 @@ function newMatch() {
   match = new BalootMatch(baseSeatOrder, teamOfPlayer);
   balootAnnounceActive = false;
   match._projectsRevealed = false;
+  match._lastAnnouncedTurnKey = null;
   render();
   playDealingAnimation();
   maybeRunAI();
@@ -138,7 +139,20 @@ function render() {
   renderBalootButton();
   renderProjectsCheckButton();
   renderOverlays();
+  announceTurnChangeIfNew();
   announceBiddingRoundIfNew();
+}
+
+/// يعلن دور اللاعب الحالي (AI بس) بفقاعة عند صورته مباشرة + صوت - بدل نص مركزي عام
+/// يتأكد من عدم تكرار نفس الإعلان لنفس الدور بالضبط (مفتاح فريد لكل تركيبة شوط+ورقة+لاعب)
+function announceTurnChangeIfNew() {
+  if (!match || match.phase !== "playing" || match.completedTrick) return;
+  if (match.turnPlayerID === HUMAN_ID) return; // بانر "دورك! اختر ورقة" فوق يدّك يغطّي حالة الإنسان أصلاً
+  const key = `${match.tricksWon.length}_${match.currentTrick.length}_${match.turnPlayerID}`;
+  if (match._lastAnnouncedTurnKey === key) return;
+  match._lastAnnouncedTurnKey = key;
+  showChatBubble(match.turnPlayerID, "دورك");
+  speak(BID_SPEECH.TURN);
 }
 
 /// شارة دائمة تحت صورة المشتري (صن/حكم♥) تبقى طول اليد - بدل فقاعة مؤقتة تختفي بعد ثوانٍ
@@ -248,8 +262,8 @@ function renderCenterArea() {
   if (match.completedTrick) {
     turnIndicator.textContent = `${displayName(match.turnPlayerID)} أخذ الشوط`;
   } else if (match.phase === "playing") {
-    // "دورك" مو محتاجة هنا - بانر "دورك! اختر ورقة" فوق يدّك يغطّي هذي الحالة بوضوح أكثر
-    turnIndicator.textContent = match.turnPlayerID === HUMAN_ID ? "" : `دور ${displayName(match.turnPlayerID)}`;
+    // دور اللاعبين أثناء اللعب يُعلن بفقاعة عند صورتهم مباشرة (announceTurnChangeIfNew) - مو نص مركزي هنا
+    turnIndicator.textContent = "";
   } else if (match.phase === "bidding" && !match.bidding.isDead) {
     turnIndicator.textContent = match.bidding.currentPlayerID === HUMAN_ID ? "دورك بالمزايدة" : `مزايدة ${displayName(match.bidding.currentPlayerID)}`;
   } else if (match.bidding?.isDead) {
@@ -723,6 +737,7 @@ $("nextHandBtn").addEventListener("click", () => {
   match.advanceToNextHand();
   match._lastSpokenRound = null;
   match._projectsRevealed = false;
+  match._lastAnnouncedTurnKey = null;
   render();
   playDealingAnimation();
   maybeRunAI();
@@ -892,6 +907,7 @@ function maybeRunAI() {
       match.advanceToNextHand();
       match._lastSpokenRound = null;
       match._projectsRevealed = false;
+      match._lastAnnouncedTurnKey = null;
       render();
       playDealingAnimation();
       maybeRunAI();

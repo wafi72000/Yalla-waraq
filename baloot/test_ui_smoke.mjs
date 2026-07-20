@@ -26,9 +26,10 @@ async function waitForActionableState(maxMs = 10000) {
   while (waited < maxMs) {
     const biddingVisible = !document.getElementById("biddingBar").classList.contains("hidden");
     const turnText = document.getElementById("turnIndicator").textContent;
+    const handCardCount = document.querySelectorAll("#handRow .card").length;
     if (biddingVisible) return "human-bidding";
     if (turnText.includes("ميتة")) return "dead";
-    if (turnText.includes("دور")) return "playing";
+    if (handCardCount >= 8) return "playing"; // اليد اكتملت (8 ورق) بعد الشراء - تجاوزنا المزايدة، وصلنا للعب الفعلي
     await new Promise((r) => setTimeout(r, 100));
     waited += 100;
   }
