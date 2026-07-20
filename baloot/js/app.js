@@ -248,7 +248,8 @@ function renderCenterArea() {
   if (match.completedTrick) {
     turnIndicator.textContent = `${displayName(match.turnPlayerID)} أخذ الشوط`;
   } else if (match.phase === "playing") {
-    turnIndicator.textContent = match.turnPlayerID === HUMAN_ID ? "دورك" : `دور ${displayName(match.turnPlayerID)}`;
+    // "دورك" مو محتاجة هنا - بانر "دورك! اختر ورقة" فوق يدّك يغطّي هذي الحالة بوضوح أكثر
+    turnIndicator.textContent = match.turnPlayerID === HUMAN_ID ? "" : `دور ${displayName(match.turnPlayerID)}`;
   } else if (match.phase === "bidding" && !match.bidding.isDead) {
     turnIndicator.textContent = match.bidding.currentPlayerID === HUMAN_ID ? "دورك بالمزايدة" : `مزايدة ${displayName(match.bidding.currentPlayerID)}`;
   } else if (match.bidding?.isDead) {
