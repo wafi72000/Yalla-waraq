@@ -490,13 +490,14 @@ function renderHand() {
     }
     el.style.marginInlineStart = index > 0 ? `${step - FIXED_CARD_WIDTH}px` : "0";
 
-    // القوس الخفيف: كل ورقة تدور شوي وترتفع/تنخفض حسب بعدها عن منتصف اليد - يحاكي مروحة ورق حقيقية بإيدك
+    // القوس الخفيف: قمة القوس نحو اللاعب (المنتصف أقرب لك)، والأطراف ترتفع نحو الطاولة - يحاكي مروحة ورق حقيقية بإيدك
     const offsetFromCenter = index - (hand.length - 1) / 2;
+    const maxOffset = (hand.length - 1) / 2;
     const angle = offsetFromCenter * ARC_ANGLE_STEP;
-    const arcDrop = Math.abs(offsetFromCenter) * ARC_RAISE_STEP;
+    const arcY = (maxOffset - Math.abs(offsetFromCenter)) * ARC_RAISE_STEP; // المنتصف = أعلى قيمة (أقرب للاعب)، الأطراف = صفر (أقرب للطاولة)
     const isSelected = card.id === selectedCardID;
     const lift = isSelected ? -SELECT_LIFT_PX : 0;
-    el.style.transform = `rotate(${angle}deg) translateY(${arcDrop + lift}px)`;
+    el.style.transform = `rotate(${angle}deg) translateY(${arcY + lift}px)`;
     el.style.zIndex = isSelected ? "999" : String(hand.length - index); // الورقة المرفوعة تعلو فوق أي تراكب مجاور
 
     el.onclick = null; // نمسح أي مستمع سابق قبل نقرر من جديد

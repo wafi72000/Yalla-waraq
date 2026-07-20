@@ -212,6 +212,13 @@ html, body {
 }
 
 /* ===== المزايدة ===== */
+.action-zone {
+  flex-shrink: 0;
+  min-height: 92px; /* تحجز مساحة ثابتة دايماً - تمنع يدّك من الانزياح لما تظهر/تختفي أزرار المزايدة/الدبل */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .bidding-bar, .doubling-bar, .hukm-suit-picker, .projects-bar {
   display: flex;
   flex-direction: column;
@@ -221,6 +228,7 @@ html, body {
   border: 1px solid var(--gold);
   border-radius: var(--radius);
   padding: 10px;
+  width: 100%;
 }
 .bidding-bar.hidden, .doubling-bar.hidden, .hukm-suit-picker.hidden, .projects-bar.hidden { display: none; }
 .bidding-title, .doubling-title, .picker-title { font-size: 13px; color: var(--gold-light); }
