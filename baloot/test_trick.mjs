@@ -123,5 +123,32 @@ function partnerOf(id) {
   check("الولد (أقوى حكم) يفوز", determineTrickWinner(cardsPlayed, Suit.CLUBS), "p2");
 }
 
+// ===== الترفيع عند الدق: مقطوع ومجبور يقطع، وخصمه سبق قطع بنفس الشوط - لازم يرفّع (يرمي أقوى حكم عنده) =====
+{
+  const hand = [makeCard(Suit.CLUBS, Rank.SEVEN), makeCard(Suit.CLUBS, Rank.JACK)];
+  const cardsPlayed = [
+    { playerID: "p1", card: makeCard(Suit.SPADES, Rank.ACE) },
+    { playerID: "p2", card: makeCard(Suit.CLUBS, Rank.NINE) }, // خصم p3 قطع بالتسعة
+  ];
+  checkThrows("مقطوع ومجبور يقطع، وخصمه قطع قبله - لازم يرفّع بأقوى حكم عنده", () =>
+    validatePlay({ hand, card: hand[0], cardsPlayed, trumpSuit: Suit.CLUBS, partnerOfID: partnerOf, playerID: "p3" })
+  );
+  checkOk("رمي الأقوى (الولد) بنفس الموقف ينجح", () =>
+    validatePlay({ hand, card: hand[1], cardsPlayed, trumpSuit: Suit.CLUBS, partnerOfID: partnerOf, playerID: "p3" })
+  );
+}
+
+// ===== لو ما عنده حكم أقوى من المطروح، يُسمح يقطع بالأضعف اللي عنده (بدون إجبار مستحيل) =====
+{
+  const hand = [makeCard(Suit.CLUBS, Rank.SEVEN)];
+  const cardsPlayed = [
+    { playerID: "p1", card: makeCard(Suit.SPADES, Rank.ACE) },
+    { playerID: "p2", card: makeCard(Suit.CLUBS, Rank.NINE) },
+  ];
+  checkOk("ما عنده حكم أقوى من المطروح - يُسمح يقطع بأضعف حكم عنده", () =>
+    validatePlay({ hand, card: hand[0], cardsPlayed, trumpSuit: Suit.CLUBS, partnerOfID: partnerOf, playerID: "p3" })
+  );
+}
+
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
 process.exit(fail > 0 ? 1 : 0);
