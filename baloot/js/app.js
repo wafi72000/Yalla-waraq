@@ -709,9 +709,9 @@ function onProjectCheckSelected(chosenType) {
 
 /// الزر يظهر بس بالجولة الأولى (قبل اكتمال أول شوط) - نفس نافذة الإعلان الحقيقية بالقانون
 function renderProjectsCheckButton() {
-  const bar = $("projectsCheckBar");
+  const btn = $("projectsCheckToggleBtn");
   const shouldShow = match && match.phase === "playing" && match.tricksWon.length === 0;
-  bar.classList.toggle("hidden", !shouldShow);
+  btn.classList.toggle("hidden", !shouldShow);
   if (shouldShow) renderProjectsCheckMenu();
   else $("projectsCheckMenu").classList.add("hidden");
 }

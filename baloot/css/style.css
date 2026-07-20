@@ -221,6 +221,7 @@ html, body {
   padding: 0 8px;
 }
 .action-frame {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -229,7 +230,7 @@ html, body {
   background: rgba(0,0,0,0.3);
   border: 1px solid var(--gold);
   border-radius: var(--radius);
-  padding: 7px 10px;
+  padding: 7px 34px;
   width: 100%;
   min-height: 64px; /* الإطار نفسه ثابت دايماً - يبقى ظاهر حتى بدون أي محتوى بداخله */
 }
@@ -482,26 +483,29 @@ html, body {
   flex-shrink: 0;
 }
 
-.quick-chat-bar {
-  position: fixed;
-  bottom: max(270px, calc(env(safe-area-inset-bottom) + 270px));
-  left: 10px;
-  z-index: 65;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-  gap: 6px;
-}
-.chat-toggle-btn {
-  width: 40px; height: 40px;
+.corner-icon-btn {
+  position: absolute;
+  top: 4px;
+  width: 26px; height: 26px;
   border-radius: 50%;
   background: rgba(0,0,0,0.4);
   border: 1px solid var(--gold);
   color: var(--cream);
-  font-size: 18px;
+  font-size: 12px;
   cursor: pointer;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.corner-icon-btn.hidden { display: none; }
+.corner-icon-btn.corner-left { left: 4px; }
+.corner-icon-btn.corner-right { right: 4px; }
 .chat-phrases {
+  position: fixed;
+  bottom: max(148px, calc(env(safe-area-inset-bottom) + 148px));
+  left: 10px;
+  z-index: 65;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -512,6 +516,7 @@ html, body {
   max-height: 200px;
   overflow-y: auto;
 }
+#projectsCheckMenu { left: auto; right: 10px; }
 .chat-phrases.hidden { display: none; }
 .chat-phrase-btn {
   background: transparent;
@@ -524,18 +529,6 @@ html, body {
   border-radius: 6px;
 }
 .chat-phrase-btn:hover { background: rgba(255,255,255,0.08); }
-
-.projects-check-bar {
-  position: fixed;
-  bottom: max(270px, calc(env(safe-area-inset-bottom) + 270px));
-  right: 10px;
-  z-index: 65;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  gap: 6px;
-}
-.projects-check-bar.hidden { display: none; }
 
 /* ===== أنيميشن توزيع الورق ===== */
 .deal-fx-layer {

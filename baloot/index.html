@@ -73,15 +73,8 @@
   <div class="chat-bubble-layer" id="chatBubbleLayer"></div>
   <div class="deal-fx-layer" id="dealFxLayer"></div>
 
-  <div class="quick-chat-bar" id="quickChatBar">
-    <button class="chat-toggle-btn" id="chatToggleBtn">💬</button>
-    <div class="chat-phrases hidden" id="chatPhrases"></div>
-  </div>
-
-  <div class="projects-check-bar hidden" id="projectsCheckBar">
-    <button class="chat-toggle-btn" id="projectsCheckToggleBtn">🃏</button>
-    <div class="chat-phrases hidden" id="projectsCheckMenu"></div>
-  </div>
+  <div class="chat-phrases hidden" id="chatPhrases"></div>
+  <div class="chat-phrases hidden" id="projectsCheckMenu"></div>
 
   <div class="hand-area">
     <div class="your-turn-banner hidden" id="yourTurnBanner">دورك! اختر ورقة</div>
@@ -92,6 +85,8 @@
 
   <div class="action-zone" id="actionZone">
     <div class="action-frame">
+      <button class="corner-icon-btn corner-left" id="chatToggleBtn">💬</button>
+      <button class="corner-icon-btn corner-right hidden" id="projectsCheckToggleBtn">🃏</button>
       <div class="bidding-bar hidden" id="biddingBar">
         <div class="bidding-title" id="biddingTitle"></div>
         <div class="bidding-choices" id="biddingChoices"></div>
