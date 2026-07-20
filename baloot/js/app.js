@@ -472,8 +472,8 @@ function applyDynamicCardSize(row, cardCount) {
 const handCardElements = new Map(); // card.id -> DOM element - يُعاد استخدامها بين الرندرات، ما تُهدم إلا لو الورقة خرجت فعلياً من اليد
 let selectedCardID = null; // الورقة "المرفوعة" حالياً (ضغطة أولى) - ضغطة ثانية عليها ترميها بالميدان فعلياً
 
-const ARC_ANGLE_STEP = 7.5; // درجة دوران لكل خطوة عن المنتصف - مروحة حقيقية حول الأفاتار (كانت 3.5، قوس خفيف جداً)
-const ARC_RAISE_STEP = 7;   // بكسل انخفاض لكل خطوة عن المنتصف (المنتصف أعلى نقطة، الأطراف أوطى بوضوح)
+const ARC_ANGLE_STEP = 7.5; // درجة دوران لكل خطوة عن المنتصف - مروحة حقيقية حول الأفاتار
+const FAN_PIVOT_DISTANCE = 210; // بكسل - المسافة من كل ورقة لنقطة الارتكاز المشتركة (عند الأفاتار تقريباً)؛ كل ما قلّت زاد انحناء القوس
 const SELECT_LIFT_PX = 18;  // كم ترتفع الورقة وقت اختيارها (ضغطة أولى) قبل رميها
 
 function renderHand() {
@@ -508,17 +508,17 @@ function renderHand() {
     }
     el.style.marginInlineStart = index > 0 ? `${step - FIXED_CARD_WIDTH}px` : "0";
 
-    // القوس الخفيف: قمة القوس نحو اللاعب (المنتصف أقرب لك)، والأطراف ترتفع نحو الطاولة - يحاكي مروحة ورق حقيقية بإيدك
+    // مروحة حقيقية: نقطة ارتكاز واحدة بعيدة تحت الورق كله (عند موقع الأفاتار تقريباً) - نفس فيزياء
+    // مروحة ورق حقيقية بإيدك (الدوران وحده ينتج القوس الطبيعي، بدون أي رفع مصطنع منفصل)
     // بما إن الصفحة RTL، أول عنصر بالمصفوفة يطلع أقصى اليمين بصرياً (مو اليسار) - نحسب الموضع البصري
     // الحقيقي (مو ترتيب المصفوفة الخام) عشان زاوية الميل تطلع صح على الطرفين بالتساوي
     const visualPos = hand.length - 1 - index; // 0 = أقصى اليسار بصرياً، الأكبر = أقصى اليمين
     const offsetFromCenter = visualPos - (hand.length - 1) / 2;
-    const maxOffset = (hand.length - 1) / 2;
     const angle = offsetFromCenter * ARC_ANGLE_STEP;
-    const arcY = (maxOffset - Math.abs(offsetFromCenter)) * ARC_RAISE_STEP; // المنتصف = أعلى قيمة (أقرب للاعب)، الأطراف = صفر (أقرب للطاولة)
     const isSelected = card.id === selectedCardID;
     const lift = isSelected ? -SELECT_LIFT_PX : 0;
-    el.style.transform = `rotate(${angle}deg) translateY(${arcY + lift}px)`;
+    el.style.transformOrigin = `50% ${FAN_PIVOT_DISTANCE}px`;
+    el.style.transform = `rotate(${angle}deg) translateY(${lift}px)`;
     el.style.zIndex = isSelected ? "999" : String(hand.length - index); // الورقة المرفوعة تعلو فوق أي تراكب مجاور
 
     el.onclick = null; // نمسح أي مستمع سابق قبل نقرر من جديد
