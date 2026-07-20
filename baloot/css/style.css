@@ -407,6 +407,39 @@ html, body {
 }
 .chat-bubble.show { opacity: 1; }
 
+/* ===== كشف ورق المشروع الفائز ===== */
+.project-reveal {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: rgba(10,20,15,0.95);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 71;
+}
+.project-reveal.show { opacity: 1; }
+.project-reveal-title {
+  font-family: 'Aref Ruqaa', serif;
+  font-size: 14px;
+  color: var(--gold-light);
+  white-space: nowrap;
+}
+.project-reveal-cards {
+  display: flex;
+  gap: 2px;
+}
+.project-reveal-cards .card {
+  width: 34px;
+  height: 49px;
+  flex-shrink: 0;
+}
+
 .quick-chat-bar {
   position: fixed;
   bottom: max(140px, calc(env(safe-area-inset-bottom) + 140px));

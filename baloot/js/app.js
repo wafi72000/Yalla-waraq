@@ -605,6 +605,39 @@ function announceProjectsSequentially() {
       speak(PROJECT_SPEECH[entry.project.type] ?? name);
     }, i * 900);
   });
+  // بعد ما يخلص الكل يعلن اسمه، صاحب أقوى مشروع يكشف ورقه فعلياً للجميع (زي القانون الحقيقي بالضبط)
+  if (match.winningProjectEntry) {
+    setTimeout(() => revealWinningProjectCards(match.winningProjectEntry), withProjects.length * 900 + 300);
+  }
+}
+
+/// يعرض ورق صاحب أقوى مشروع فعلياً (صور حقيقية) لمدة كافية، فوق مقعده - يثبت للجميع صحة مشروعه
+function revealWinningProjectCards(entry) {
+  const layer = $("chatBubbleLayer");
+  if (!layer || !entry?.project) return;
+  const seatEl = entry.playerID === HUMAN_ID ? $("handRow") : $(SEAT_ELEMENT_ID[entry.playerID]);
+  if (!seatEl) return;
+  const rect = seatEl.getBoundingClientRect();
+
+  const panel = document.createElement("div");
+  panel.className = "project-reveal";
+  const title = document.createElement("div");
+  title.className = "project-reveal-title";
+  title.textContent = `${displayName(entry.playerID)}: ${PROJECT_NAME_AR[entry.project.type]}`;
+  panel.appendChild(title);
+  const cardsRow = document.createElement("div");
+  cardsRow.className = "project-reveal-cards";
+  for (const card of entry.project.cards) cardsRow.appendChild(cardDisplay(card));
+  panel.appendChild(cardsRow);
+
+  panel.style.left = `${rect.left + rect.width / 2}px`;
+  panel.style.top = `${Math.max(10, rect.top - 10)}px`;
+  layer.appendChild(panel);
+  (window.requestAnimationFrame ?? ((fn) => setTimeout(fn, 16)))(() => panel.classList.add("show"));
+  setTimeout(() => {
+    panel.classList.remove("show");
+    setTimeout(() => panel.remove(), 300);
+  }, 3200);
 }
 
 function afterAction() {

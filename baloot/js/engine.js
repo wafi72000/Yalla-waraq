@@ -5,7 +5,7 @@ import { dealInitial, completeDealAfterPurchase } from "./deal.js";
 import { BiddingState, BidChoice } from "./bidding.js";
 import { validatePlay, determineTrickWinner } from "./trick.js";
 import { DoublingState, SunDoublingState } from "./doubling.js";
-import { detectBestProject, resolveProjectPriority } from "./projects.js";
+import { detectBestProject, resolveProjectPriority, compareProjects } from "./projects.js";
 import { scoreHand, PendingPot } from "./scoring.js";
 
 export { HandRuleError };
@@ -65,6 +65,7 @@ export class BalootMatch {
     this.projectsResolved = false; // يُصفّر كل يد جديدة - يضمن resolveProjects تُستدعى مرة وحدة بالوقت الصحيح
     this.projectEntries = null;
     this.projectResult = null;
+    this.winningProjectEntry = null;
     this.projectPoints = null;
   }
 
@@ -168,12 +169,25 @@ export class BalootMatch {
     this.projectResult = result;
     if (result.winningTeam === "A") {
       this.projectPoints = { A: teamA.reduce((s, e) => s + (e.project ? projectPointsOf(e.project) : 0), 0), B: 0 };
+      this.winningProjectEntry = this._bestEntryInTeam(teamA);
     } else if (result.winningTeam === "B") {
       this.projectPoints = { A: 0, B: teamB.reduce((s, e) => s + (e.project ? projectPointsOf(e.project) : 0), 0) };
+      this.winningProjectEntry = this._bestEntryInTeam(teamB);
     } else {
       this.projectPoints = { A: 0, B: 0 };
+      this.winningProjectEntry = null;
     }
     return result;
+  }
+
+  /// يحدد اللاعب صاحب أقوى مشروع فردي داخل فريق معيّن (نفس منطق فض التعادل المستخدم بحسم الفريق الفائز)
+  _bestEntryInTeam(teamEntries) {
+    let winner = null;
+    for (const entry of teamEntries) {
+      if (!entry.project) continue;
+      if (!winner || compareProjects(entry.project, winner.project, this.trumpSuit) < 0) winner = entry;
+    }
+    return winner;
   }
 
   /// يفحص كل لاعب: هل يملك الشايب+البنت من لون الحكم؟ لو نعم، يفعّل له راية "يقدر يعلن بلوت"
