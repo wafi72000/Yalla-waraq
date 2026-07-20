@@ -602,6 +602,12 @@ $("nextHandBtn").addEventListener("click", () => {
 });
 $("newMatchBtn").addEventListener("click", newMatch);
 $("scoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.remove("hidden"));
+$("homeBtn").addEventListener("click", (e) => {
+  if (match && !match.matchOver) {
+    const sure = confirm("فيه مباراة شغّالة الحين - تقدّمك بينحذف لو رجعت للرئيسية. متأكد؟");
+    if (!sure) e.preventDefault();
+  }
+});
 $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.add("hidden"));
 
 const TRICK_PAUSE_MS = 2500; // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح

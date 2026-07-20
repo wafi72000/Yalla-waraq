@@ -1018,6 +1018,14 @@ $("newGameBtn").addEventListener("click", () => {
   location.reload();
 });
 
+$("homeBtn").addEventListener("click", (e) => {
+  const gameStarted = $("startScreen").classList.contains("hidden");
+  if (gameStarted) {
+    const sure = confirm("فيه مباراة شغّالة الحين - تقدّمك بينحذف لو رجعت للرئيسية. متأكد؟");
+    if (!sure) e.preventDefault();
+  }
+});
+
 $("muteBtn").addEventListener("click", () => {
   const newMuted = !sounds.isMuted();
   sounds.setMuted(newMuted);
