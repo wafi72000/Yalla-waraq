@@ -491,7 +491,10 @@ function renderHand() {
     el.style.marginInlineStart = index > 0 ? `${step - FIXED_CARD_WIDTH}px` : "0";
 
     // القوس الخفيف: قمة القوس نحو اللاعب (المنتصف أقرب لك)، والأطراف ترتفع نحو الطاولة - يحاكي مروحة ورق حقيقية بإيدك
-    const offsetFromCenter = index - (hand.length - 1) / 2;
+    // بما إن الصفحة RTL، أول عنصر بالمصفوفة يطلع أقصى اليمين بصرياً (مو اليسار) - نحسب الموضع البصري
+    // الحقيقي (مو ترتيب المصفوفة الخام) عشان زاوية الميل تطلع صح على الطرفين بالتساوي
+    const visualPos = hand.length - 1 - index; // 0 = أقصى اليسار بصرياً، الأكبر = أقصى اليمين
+    const offsetFromCenter = visualPos - (hand.length - 1) / 2;
     const maxOffset = (hand.length - 1) / 2;
     const angle = offsetFromCenter * ARC_ANGLE_STEP;
     const arcY = (maxOffset - Math.abs(offsetFromCenter)) * ARC_RAISE_STEP; // المنتصف = أعلى قيمة (أقرب للاعب)، الأطراف = صفر (أقرب للطاولة)
