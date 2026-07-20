@@ -228,5 +228,53 @@ function buildTiedSunScenario() {
   check("الخصم (B) ياخذ الـ16 كاملة", result.B, 16);
 }
 
+// ===== breakdown: يظهر بكل الحالات (عادي، خسف، تعليق، كابوت) بالتفاصيل الصحيحة =====
+{
+  // حالة عادية: نفس بيانات أول اختبار بالملف (A ينجح بأغلبية واضحة)
+  const highValueCards = [Rank.ACE, Rank.TEN, Rank.KING, Rank.QUEEN, Rank.JACK].flatMap((r) =>
+    [Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS, Suit.SPADES].map((s) => makeCard(s, r))
+  );
+  const zeroCards = [Rank.NINE, Rank.EIGHT, Rank.SEVEN].flatMap((r) =>
+    [Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS, Suit.SPADES].map((s) => makeCard(s, r))
+  );
+  const tricksWon = [
+    trickOf("p1", highValueCards.slice(0, 10)),
+    trickOf("p3", highValueCards.slice(10, 20)),
+    trickOf("p2", zeroCards.slice(0, 6)),
+    trickOf("p4", zeroCards.slice(6, 12)),
+  ];
+  const result = scoreHand({
+    tricksWon, trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 50, B: 0 }, // نضيف مشروع لفريق A عشان نتحقق من ظهوره بالتفصيل
+  });
+  check("breakdown.cardPointsRaw موجود ويطابق النقاط الخام (120 لفريق A، 0 لفريق B)", result.breakdown.cardPointsRaw, { A: 120, B: 0 });
+  check("breakdown.lastTrickTeam يطابق مين أخذ آخر أكلة", result.breakdown.lastTrickTeam, "A");
+  check("breakdown.lastTrickBonus يطابق قيمة الأرض بالصن (25)", result.breakdown.lastTrickBonus, 25);
+  check("breakdown.projectPointsByTeam يعكس المشروع المُمرَّر (50 لفريق A)", result.breakdown.projectPointsByTeam, { A: 50, B: 0 });
+  check("breakdown.roundedCardPoints موجودة بالحالة العادية", typeof result.breakdown.roundedCardPoints, "object");
+}
+
+// ===== breakdown بحالة الكابوت - تحتوي capotTeam وcapotBasePoints، وcardPointsRaw موجودة للعرض حتى لو ما أثّرت بالحساب =====
+{
+  const allCards = [Rank.ACE, Rank.TEN, Rank.KING, Rank.QUEEN, Rank.JACK, Rank.NINE, Rank.EIGHT, Rank.SEVEN].flatMap((r) =>
+    [Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS, Suit.SPADES].map((s) => makeCard(s, r))
+  );
+  const tricksWon = [
+    trickOf("p1", allCards.slice(0, 8)),
+    trickOf("p3", allCards.slice(8, 16)),
+    trickOf("p1", allCards.slice(16, 24)),
+    trickOf("p3", allCards.slice(24, 32)),
+  ];
+  const result = scoreHand({
+    tricksWon, trumpSuit: Suit.HEARTS, isHukm: true,
+    lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("breakdown.capotTeam يطابق الفريق الكابوت", result.breakdown.capotTeam, "A");
+  check("breakdown.capotBasePoints يطابق قيمة الكابوت بالحكم (25)", result.breakdown.capotBasePoints, 25);
+  check("breakdown.cardPointsRaw موجودة حتى بالكابوت (للعرض)", typeof result.breakdown.cardPointsRaw, "object");
+}
+
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
 process.exit(fail > 0 ? 1 : 0);

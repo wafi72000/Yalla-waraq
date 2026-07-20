@@ -50,16 +50,23 @@ if (state === "human-bidding") {
   const looksLikeError = /مو دورك|انتهت بالفعل|صكّة ميتة|غير متاح|يتطلب إعلان|يجب يكون/.test(toastText);
   check("بعد مزايدة الإنسان، ما ظهر خطأ حقيقي بالتوست", looksLikeError, false);
 
-  // لو مزايدة الإنسان أنهت حكم معلّق (بس منه)، ممكن يفتح دور الإنسان بمزايدة الدبل (مو AI) - نكمّل بالضغط على "ابدأ اللعب"
-  await new Promise((r) => setTimeout(r, 300));
-  const doublingVisible = !document.getElementById("doublingBar").classList.contains("hidden");
-  const sunDoublingVisible = !document.getElementById("sunDoublingBar").classList.contains("hidden");
-  if (doublingVisible) {
-    const proceedBtn = [...document.querySelectorAll("#doublingChoices .double-btn")].find((b) => b.textContent.includes("ابدأ اللعب"));
-    proceedBtn?.dispatchEvent(new window.Event("click", { bubbles: true }));
-  } else if (sunDoublingVisible) {
-    const normalBtn = [...document.querySelectorAll("#sunDoublingChoices .double-btn")].find((b) => b.textContent.includes("لعب عادي"));
-    normalBtn?.dispatchEvent(new window.Event("click", { bubbles: true }));
+  // لو مزايدة الإنسان أنهت حكم معلّق (بس منه)، ممكن يفتح دور الإنسان بمزايدة الدبل (مو AI) - قد يتكرر أكثر من مرة
+  // (دبل الحكم مفتوح دائماً، فممكن يتصاعد لعدة جولات) - نكمّل بالضغط على الخيار "الآمن" كل مرة لحد ما يبدأ اللعب الفعلي
+  for (let i = 0; i < 6; i++) {
+    await new Promise((r) => setTimeout(r, 300));
+    const doublingVisible = !document.getElementById("doublingBar").classList.contains("hidden");
+    const sunDoublingVisible = !document.getElementById("sunDoublingBar").classList.contains("hidden");
+    if (doublingVisible) {
+      const proceedBtn = [...document.querySelectorAll("#doublingChoices .double-btn")].find((b) => b.textContent.includes("ابدأ اللعب"));
+      if (proceedBtn) proceedBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
+      else break; // مو دور الإنسان بالضبط (ينتظر AI) - نطلع من الحلقة، الـAI بيكمّل تلقائياً
+    } else if (sunDoublingVisible) {
+      const normalBtn = [...document.querySelectorAll("#sunDoublingChoices .double-btn")].find((b) => b.textContent.includes("لعب عادي"));
+      if (normalBtn) normalBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
+      else break;
+    } else {
+      break; // ما فيه نافذة دبل مفتوحة - انتهينا، أو اللعب بدأ فعلاً
+    }
   }
 } else if (state === "playing") {
   check("مرحلة اللعب وصلت بنجاح", true, true);

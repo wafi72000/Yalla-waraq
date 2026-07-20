@@ -34,6 +34,16 @@ export function scoreHand({
   balootPointsByTeam = { A: 0, B: 0 }, // مستقل تماماً - يُضاف دايماً بغض النظر عن الكابوت/الخسف
 }) {
   const system = isHukm ? "hukm" : "sun";
+  // نحسب نقاط الورق الخام دايماً (حتى بالكابوت) - للعرض التفصيلي بالواجهة، حتى لو ما تدخل بحساب النتيجة النهائية مباشرة
+  const cardTotalsRaw = computeRawCardPoints(tricksWon, trumpSuit, teamOfPlayer);
+  const breakdownBase = {
+    cardPointsRaw: { ...cardTotalsRaw },
+    lastTrickTeam: lastTrickWinnerTeam,
+    lastTrickBonus: LAST_TRICK_BONUS[system],
+    projectPointsByTeam: { ...projectPointsByTeam },
+    balootPointsByTeam: { ...balootPointsByTeam },
+    doubleMultiplier,
+  };
 
   if (capotTeam) {
     const loserTeam = capotTeam === "A" ? "B" : "A";
@@ -43,10 +53,10 @@ export function scoreHand({
     // البلوت محمي دايماً حتى لو الفريق الخاسر هو صاحبه
     finalPoints.A = (finalPoints.A ?? 0) + (balootPointsByTeam.A ?? 0);
     finalPoints.B = (finalPoints.B ?? 0) + (balootPointsByTeam.B ?? 0);
-    return { A: finalPoints.A, B: finalPoints.B, isCapot: true, isPending: false, isDefeat: false };
+    return { A: finalPoints.A, B: finalPoints.B, isCapot: true, isPending: false, isDefeat: false, breakdown: { ...breakdownBase, capotTeam, capotBasePoints: base } };
   }
 
-  const cardTotals = computeRawCardPoints(tricksWon, trumpSuit, teamOfPlayer);
+  const cardTotals = { ...cardTotalsRaw };
   cardTotals[lastTrickWinnerTeam] += LAST_TRICK_BONUS[system];
 
   const rawA = cardTotals.A + (projectPointsByTeam.A ?? 0);
@@ -54,6 +64,7 @@ export function scoreHand({
 
   const roundedA = Math.round(rawA / 10);
   const roundedB = Math.round(rawB / 10);
+  const breakdown = { ...breakdownBase, roundedCardPoints: { A: roundedA, B: roundedB } };
 
   const opponentTeam = buyerTeam === "A" ? "B" : "A";
   const buyerRounded = buyerTeam === "A" ? roundedA : roundedB;
@@ -71,14 +82,14 @@ export function scoreHand({
       const finalPoints = { [buyerTeam]: 0, [opponentTeam]: rawTotalRounded * doubleMultiplier };
       finalPoints.A = (finalPoints.A ?? 0) + (balootPointsByTeam.A ?? 0);
       finalPoints.B = (finalPoints.B ?? 0) + (balootPointsByTeam.B ?? 0);
-      return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: false, isDefeat: true };
+      return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: false, isDefeat: true, breakdown };
     }
     // تعادل عادي (13-13 بالصن مثلاً) - نقاط الخصم فوراً، نقاط المشتري معلّقة
     const finalPoints = { [opponentTeam]: opponentRounded * doubleMultiplier, [buyerTeam]: 0 };
     const pendingPoints = buyerRounded * doubleMultiplier;
     finalPoints.A = (finalPoints.A ?? 0) + (balootPointsByTeam.A ?? 0);
     finalPoints.B = (finalPoints.B ?? 0) + (balootPointsByTeam.B ?? 0);
-    return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: true, pendingTeam: buyerTeam, pendingAmount: pendingPoints, isDefeat: false };
+    return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: true, pendingTeam: buyerTeam, pendingAmount: pendingPoints, isDefeat: false, breakdown };
   }
 
   // نتيجة حاسمة - نتحقق هل المشتري حقق الأغلبية (أكثر من النصف)
@@ -94,7 +105,7 @@ export function scoreHand({
   }
   finalPoints.A = (finalPoints.A ?? 0) + (balootPointsByTeam.A ?? 0);
   finalPoints.B = (finalPoints.B ?? 0) + (balootPointsByTeam.B ?? 0);
-  return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: false, isDefeat };
+  return { A: finalPoints.A, B: finalPoints.B, isCapot: false, isPending: false, isDefeat, breakdown };
 }
 
 /// يدير الحصالة المعلّقة عبر عدة أيدي - كائن بسيط بمبلغ فقط (مين ياخذه يحدده الكود المستدعي حسب فريق الفوز الفعلي)

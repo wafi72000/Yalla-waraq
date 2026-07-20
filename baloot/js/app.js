@@ -521,9 +521,36 @@ function renderOverlays() {
 
   if (showHandEnd) {
     const r = match.handResult;
+    const b = r.breakdown ?? {};
+    const humanTeam = teamOfPlayer(HUMAN_ID);
+    const oppTeam = humanTeam === "A" ? "B" : "A";
+    const usThem = (team) => (team === humanTeam ? "لنا" : "لهم");
+
     $("handEndTitle").textContent = r.isCapot ? "كابوت!" : r.isPending ? "تعادل معلّق" : r.isDefeat ? "خسف!" : "انتهت اليد";
     $("handEndDetails").textContent = `لنا: ${r.A} — لهم: ${r.B}`;
-    $("handEndScoreTable").innerHTML = `<tr><td>المجموع التراكمي</td><td>لنا ${match.cumulativeScores.A} — لهم ${match.cumulativeScores.B}</td></tr>`;
+
+    const rows = [];
+    if (r.isCapot && b.capotTeam) {
+      rows.push(`<tr><td>كابوت (${usThem(b.capotTeam)})</td><td>${b.capotBasePoints} نقطة</td></tr>`);
+    } else if (b.cardPointsRaw) {
+      rows.push(`<tr><td>الأبناط (لنا)</td><td>${b.cardPointsRaw[humanTeam] ?? 0}</td></tr>`);
+      rows.push(`<tr><td>الأبناط (لهم)</td><td>${b.cardPointsRaw[oppTeam] ?? 0}</td></tr>`);
+      if (b.lastTrickTeam) {
+        rows.push(`<tr><td>آخر أكلة (الأرض)</td><td>${usThem(b.lastTrickTeam)} +${b.lastTrickBonus}</td></tr>`);
+      }
+    }
+    if (b.projectPointsByTeam) {
+      const winningTeam = b.projectPointsByTeam.A > 0 ? "A" : b.projectPointsByTeam.B > 0 ? "B" : null;
+      if (winningTeam) {
+        rows.push(`<tr><td>المشاريع</td><td>${usThem(winningTeam)} +${b.projectPointsByTeam[winningTeam]}</td></tr>`);
+      }
+    }
+    if (b.balootPointsByTeam?.[humanTeam]) rows.push(`<tr><td>بلوت (لنا)</td><td>+${b.balootPointsByTeam[humanTeam]}</td></tr>`);
+    if (b.balootPointsByTeam?.[oppTeam]) rows.push(`<tr><td>بلوت (لهم)</td><td>+${b.balootPointsByTeam[oppTeam]}</td></tr>`);
+    if (b.doubleMultiplier > 1) rows.push(`<tr><td>معامل الدبل</td><td>×${b.doubleMultiplier}</td></tr>`);
+    rows.push(`<tr><td>المجموع التراكمي</td><td>لنا ${match.cumulativeScores.A} — لهم ${match.cumulativeScores.B}</td></tr>`);
+
+    $("handEndScoreTable").innerHTML = rows.join("");
   }
 
   if (match.matchOver) {
