@@ -189,6 +189,8 @@ function renderCardBacks() {
   }
 }
 
+const trickCardElements = new Map(); // card.id -> DOM element - نفس فكرة كاش يدّك، يمنع هدم/إعادة بناء الصور بالميدان
+
 function renderCenterArea() {
   const flippedZone = $("flippedCardZone");
   flippedZone.innerHTML = "";
@@ -197,14 +199,23 @@ function renderCenterArea() {
   }
 
   const trickZone = $("trickZone");
-  trickZone.innerHTML = "";
-  if (match.phase === "playing" || match.phase === "doubling") {
-    const cardsToShow = match.completedTrick ?? match.currentTrick ?? [];
-    for (const entry of cardsToShow) {
-      const el = cardDisplay(entry.card);
+  const cardsToShow = (match.phase === "playing" || match.phase === "doubling")
+    ? (match.completedTrick ?? match.currentTrick ?? [])
+    : [];
+
+  const currentIds = new Set(cardsToShow.map((e) => e.card.id));
+  for (const [id, el] of trickCardElements) {
+    if (!currentIds.has(id)) { el.remove(); trickCardElements.delete(id); }
+  }
+  for (const entry of cardsToShow) {
+    let el = trickCardElements.get(entry.card.id);
+    if (!el) {
+      el = cardDisplay(entry.card);
       el.classList.add("trick-card", `pos-${SEAT_TRICK_POS[entry.playerID]}`);
+      trickCardElements.set(entry.card.id, el);
       trickZone.appendChild(el);
     }
+    // لو العنصر موجود أصلاً (من رندر سابق)، ما نلمسه إطلاقاً - يبقى مكانه وصورته وأي أنيميشن شغّالة عليه (animateTrickCollection)
   }
 
   const turnIndicator = $("turnIndicator");
