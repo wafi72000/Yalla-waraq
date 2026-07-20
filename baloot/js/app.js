@@ -472,8 +472,8 @@ function applyDynamicCardSize(row, cardCount) {
 const handCardElements = new Map(); // card.id -> DOM element - يُعاد استخدامها بين الرندرات، ما تُهدم إلا لو الورقة خرجت فعلياً من اليد
 let selectedCardID = null; // الورقة "المرفوعة" حالياً (ضغطة أولى) - ضغطة ثانية عليها ترميها بالميدان فعلياً
 
-const ARC_ANGLE_STEP = 3.5; // درجة دوران لكل خطوة عن المنتصف - يعطي القوس الخفيف
-const ARC_RAISE_STEP = 3;   // بكسل انخفاض لكل خطوة عن المنتصف (المنتصف أعلى نقطة، الأطراف أوطى شوي)
+const ARC_ANGLE_STEP = 7.5; // درجة دوران لكل خطوة عن المنتصف - مروحة حقيقية حول الأفاتار (كانت 3.5، قوس خفيف جداً)
+const ARC_RAISE_STEP = 7;   // بكسل انخفاض لكل خطوة عن المنتصف (المنتصف أعلى نقطة، الأطراف أوطى بوضوح)
 const SELECT_LIFT_PX = 18;  // كم ترتفع الورقة وقت اختيارها (ضغطة أولى) قبل رميها
 
 function renderHand() {
