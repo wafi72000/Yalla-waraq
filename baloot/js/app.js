@@ -637,7 +637,11 @@ $("homeBtn").addEventListener("click", (e) => {
 });
 $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.add("hidden"));
 
-const TRICK_PAUSE_MS = 2500; // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح
+// سرعة لعب الـAI الموحّدة - متوسطة، تعطي وقت كافي لملاحظة الورقة المفروشة وآخر ورقة تُلعب
+const AI_BID_DELAY_MS = 1200;    // قرار مزايدة (كان 500 - سريع جداً، يصعّب متابعة الورقة المفروشة)
+const AI_DOUBLE_DELAY_MS = 1200; // قرار دبل/دبل صن (كان 700)
+const AI_PLAY_DELAY_MS = 1400;   // رمي ورقة أثناء اللعب (كان 1200)
+const TRICK_PAUSE_MS = 3000;     // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح (كانت 2500)
 
 /// كل لاعب معه مشروع يعلنه بفقاعة كلام فوق صورته + صوت - بترتيب متتابع (900ms بينهم) عشان الأصوات ما تتقاطع
 /// هذا يصير بالجولة (الشوط) الأولى بس - الكشف الفعلي للورق يتأخر للجولة الثانية (انظر revealWinningProjectCards)
@@ -778,7 +782,7 @@ function maybeRunAI() {
           try { match.submitBid(current, BidChoice.PASS); } catch (e2) { console.error("[AI bid]", e2); }
         }
         afterAction();
-      }, 500);
+      }, AI_BID_DELAY_MS);
     }
     return;
   }
@@ -821,7 +825,7 @@ function maybeRunAI() {
           match.proceedToPlay();
           afterAction();
         }
-      }, 700);
+      }, AI_DOUBLE_DELAY_MS);
     }
     // لو دور فريق الإنسان، ننتظر تفاعله عبر renderDoublingBar (ما نسوي شي هنا)
     return;
@@ -843,7 +847,7 @@ function maybeRunAI() {
         } catch (e) {
           console.error("[AI sunDouble]", e);
         }
-      }, 700);
+      }, AI_DOUBLE_DELAY_MS);
     }
     // لو دور فريق الإنسان (هو الخصم)، ننتظر تفاعله عبر renderSunDoublingBar
     return;
@@ -864,7 +868,7 @@ function maybeRunAI() {
         }
       }
       afterAction();
-    }, 1200);
+    }, AI_PLAY_DELAY_MS);
     return;
   }
 }
