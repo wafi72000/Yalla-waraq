@@ -394,16 +394,24 @@ html, body {
   50% { opacity: 1; }
 }
 .your-turn-banner.hidden { display: none; }
-.card .center-suit {
+
+/* بديل نصي موثوق 100% (بدون شبكة) يظهر بس لو فشل تحميل صورة SVG الأصلية - يمنع ظهور ورقة فاضية نهائياً */
+.card.card-fallback { display: block; background: var(--cream); }
+.card-fallback .fallback-corner {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  font-family: var(--font-body);
+}
+.card-fallback .fallback-corner:first-child { top: 3px; left: 4px; }
+.card-fallback .fallback-corner:last-child { bottom: 3px; right: 4px; }
+.card-fallback .fallback-center-suit {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 26px;
-}
-.card .bottom-corner {
-  align-self: flex-end;
-  transform: rotate(180deg);
-  line-height: 1;
+  font-size: 28px;
 }
 .card-back {
   width: 46px; height: 66px;
