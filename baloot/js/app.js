@@ -472,7 +472,7 @@ function applyDynamicCardSize(row, cardCount) {
     row.dataset.cardStep = String(FIXED_CARD_WIDTH);
     return;
   }
-  const desiredStep = FIXED_CARD_WIDTH + HAND_GAP; // المسافة المفضّلة بين بداية كل ورقة والثانية (بدون تراكب)
+  const desiredStep = FIXED_CARD_WIDTH - 22; // مسافة مفضّلة تتضمّن تراكب دايماً (مو بس عند ضيق الشاشة) - يقرّب الورق من بعضه
   const maxAllowedStep = (containerWidth - FIXED_CARD_WIDTH) / (cardCount - 1);
   const step = Math.max(12, Math.min(desiredStep, maxAllowedStep)); // 12px حد أدنى (كان 20) - يسمح بتراكب أكبر لضمان الكل يفضل جوّه الشاشة
   row.dataset.cardStep = String(step);
