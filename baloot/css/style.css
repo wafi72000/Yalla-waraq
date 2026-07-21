@@ -214,14 +214,14 @@ html, body {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
   width: 100%;
 }
+/* الورقة المفروشة (وقت المزايدة) ومنطقة الشوط (وقت اللعب) لا تظهران مع بعض أبداً - نمركزهما بنفس
+   النقطة بالضبط بدل ما كانا يترصّون بعمود واحد (كان يزيح الورقة المفروشة لفوق مركز الميدان الحقيقي) */
 .flipped-card-zone {
-  position: relative;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   width: 80px;
   height: 116px;
 }
@@ -230,7 +230,9 @@ html, body {
   height: 116px;
 }
 .trick-zone {
-  position: relative;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   width: 140px;
   height: 90px;
 }
@@ -243,6 +245,10 @@ html, body {
 .trick-zone .trick-card.pos-left { top: 50%; right: 0; transform: translateY(-50%); }
 .trick-zone .trick-card.pos-right { top: 50%; left: 0; transform: translateY(-50%); }
 .turn-indicator {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, 80px); /* تحت مركز الميدان بمسافة كافية تتجاوز الورقة المفروشة/منطقة الشوط */
+  white-space: nowrap;
   font-size: 12px;
   color: var(--gold-light);
   background: rgba(0,0,0,0.35);
