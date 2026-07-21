@@ -306,7 +306,9 @@ export class BalootMatch {
       teamOfPlayer: this.teamOfPlayer,
       buyerTeam: this.buyerTeam,
       projectPointsByTeam: this.projectPoints ?? { A: 0, B: 0 },
-      doubleMultiplier: this.doubling?.multiplier ?? this.sunDoubling?.multiplier ?? 1,
+      // دبل الصن (شرط رصيد 100+) مؤكَّد من وافي إنه بدون أي أثر رقمي - مضاعفة الصن الأصيلة (×2) تُطبَّق
+      // داخل scoreHand نفسها بمعزل عن هذا المعامل. هذا المعامل يعكس دبل الحكم (دبل/ثري/فور/قهوة) بس.
+      doubleMultiplier: this.isHukm ? (this.doubling?.multiplier ?? 1) : 1,
       balootPointsByTeam,
     });
 
