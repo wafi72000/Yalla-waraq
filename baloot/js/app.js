@@ -463,7 +463,7 @@ const HAND_GAP = 3;
 /// نفس فكرة اللعب الحقيقي: يد فيها ورق كثير تتراكب جزئياً، بدل ما تصغر كل ورقة لدرجة يصعب تمييزها
 function applyDynamicCardSize(row, cardCount) {
   if (cardCount === 0) return;
-  const containerWidth = row.parentElement?.clientWidth || row.clientWidth || window.innerWidth - 16;
+  const containerWidth = (row.parentElement?.clientWidth || row.clientWidth || window.innerWidth - 16) - 6; // هامش أمان يمنع أي طفح خارج الشاشة
   const height = Math.round(FIXED_CARD_WIDTH * CARD_ASPECT_RATIO);
   row.style.setProperty("--dynamic-card-w", `${FIXED_CARD_WIDTH}px`);
   row.style.setProperty("--dynamic-card-h", `${height}px`);
@@ -474,7 +474,7 @@ function applyDynamicCardSize(row, cardCount) {
   }
   const desiredStep = FIXED_CARD_WIDTH + HAND_GAP; // المسافة المفضّلة بين بداية كل ورقة والثانية (بدون تراكب)
   const maxAllowedStep = (containerWidth - FIXED_CARD_WIDTH) / (cardCount - 1);
-  const step = Math.max(20, Math.min(desiredStep, maxAllowedStep)); // 20px حد أدنى - يبقى جزء من كل ورقة ظاهر دايماً
+  const step = Math.max(12, Math.min(desiredStep, maxAllowedStep)); // 12px حد أدنى (كان 20) - يسمح بتراكب أكبر لضمان الكل يفضل جوّه الشاشة
   row.dataset.cardStep = String(step);
 }
 
