@@ -222,29 +222,6 @@ function buyHukmAndFinalize(match, buyerID) {
   check("حتى لو أعلن متأخر بالثانية، confirmed تبقى false (سقط حقه)", match.balootState.get(buyerID).confirmed, false);
 }
 
-// ===== الحصالة المعلّقة مستقلة عن الهوية: المشتري يتغيّر بين يدين متعادلتين، الحصالة تتراكم وتُطلق لمن يفوز فعلياً =====
-{
-  const match = freshMatch();
-  // نحاكي يدوياً (بتجاوز آلية المباراة الطبيعية) بحقن نتائج تعادل مباشرة على pendingPot، بغض النظر عن هوية المشتري في كل يد
-  const r1 = { isPending: true, pendingAmount: 13, pendingTeam: "A", A: 0, B: 5 };
-  const released1 = match.pendingPot.applyHandResult(r1);
-  check("يد أولى: مشتري افتراضي A تعادل - لا إطلاق", released1, 0);
-  check("الحصالة = 13", match.pendingPot.amount, 13);
-
-  // اليد الثانية: المشتري تغيّر لفريق B، وتعادل مرة ثانية - الحصالة تتراكم بغض النظر عن تغيّر المشتري
-  const r2 = { isPending: true, pendingAmount: 8, pendingTeam: "B", A: 3, B: 0 };
-  const released2 = match.pendingPot.applyHandResult(r2);
-  check("يد ثانية (مشتري مختلف) تعادلت أيضاً: تتراكم بغض النظر عن هوية المشتري", match.pendingPot.amount, 21);
-  check("لا إطلاق بعد", released2, 0);
-
-  // اليد الثالثة: نتيجة حاسمة - الفريق B يفوز فعلياً (حتى لو ما كان هو صاحب أي حصالة سابقة بالضرورة)
-  const r3 = { isPending: false, A: 2, B: 9 };
-  const released3 = match.pendingPot.applyHandResult(r3);
-  check("يد ثالثة حاسمة: تُطلق كامل الحصالة (21) بغض النظر عن مين كان صاحبها بالأصل", released3, 21);
-  check("الحصالة تصفر", match.pendingPot.amount, 0);
-  // التطبيق الفعلي: الفائز الحقيقي بهذي اليد (B، لأن B=9 > A=2) هو من ياخذ الـ21 - يُطبَّق بمنطق _finishHand الفعلي بالمحرك
-}
-
 // ===== إصلاح: projectsResolved يُصفّر بكل يد جديدة - resolveProjects تشتغل باليد الثانية أيضاً، مش أول يد بس =====
 {
   const match = freshMatch();

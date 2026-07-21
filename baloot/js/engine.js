@@ -6,7 +6,7 @@ import { BiddingState, BidChoice } from "./bidding.js";
 import { validatePlay, determineTrickWinner } from "./trick.js";
 import { DoublingState, SunDoublingState } from "./doubling.js";
 import { detectBestProject, resolveProjectPriority, compareProjects } from "./projects.js";
-import { scoreHand, PendingPot } from "./scoring.js";
+import { scoreHand } from "./scoring.js";
 
 export { HandRuleError };
 
@@ -24,7 +24,6 @@ export class BalootMatch {
       return seatOrder[(idx + 2) % 4];
     };
     this.cumulativeScores = { A: 0, B: 0 };
-    this.pendingPot = new PendingPot();
     this.dealerIndex = 0; // index بـ baseSeatOrder لمين يوزّع هالجولة
     this.matchOver = false;
     this.matchWinner = null; // "A" | "B"
@@ -306,34 +305,15 @@ export class BalootMatch {
       teamOfPlayer: this.teamOfPlayer,
       buyerTeam: this.buyerTeam,
       projectPointsByTeam: this.projectPoints ?? { A: 0, B: 0 },
-      // دبل الصن (شرط رصيد 100+) مؤكَّد من وافي إنه بدون أي أثر رقمي - مضاعفة الصن الأصيلة (×2) تُطبَّق
-      // داخل scoreHand نفسها بمعزل عن هذا المعامل. هذا المعامل يعكس دبل الحكم (دبل/ثري/فور/قهوة) بس.
-      doubleMultiplier: this.isHukm ? (this.doubling?.multiplier ?? 1) : 1,
+      // معامل الدبل الفعّال: دبل الحكم (2/3/4/5) أو دبل الصن (2 لو الخصم فعّله) - كلاهما مقبول بـscoreHand
+      doubleMultiplier: this.isHukm ? (this.doubling?.multiplier ?? 1) : (this.sunDoubling?.multiplier ?? 1),
       balootPointsByTeam,
     });
 
-    // استثناء الدبل: تعادل + دبل فعّال = لا تعليق، الفريق المتحدّي يخسر فوراً (نطبّقه هنا فوق نتيجة scoreHand العامة)
-    if (result.isPending && this.doubling && this.doubling.level > 0) {
-      const loserTeam = this.buyerTeam; // بالتعادل، "المتحدّي" بالسياق العام هو من فشل بتحقيق الأغلبية = صاحب النقاط المعلّقة
-      const winnerTeam = loserTeam === "A" ? "B" : "A";
-      const totalNet = (result.A + result.B + result.pendingAmount); // نجمع كل شي كان بالتعليق فوق الفوري
-      result.isPending = false;
-      result[winnerTeam] = totalNet;
-      result[loserTeam] = 0;
-      result.isDefeat = true;
-      result.doubleTieOverride = true;
-    }
-
     this.handResult = result;
 
-    const released = this.pendingPot.applyHandResult(result);
     this.cumulativeScores.A += result.A;
     this.cumulativeScores.B += result.B;
-    if (released > 0) {
-      // الفائز الفعلي بهذي اليد (مين حصل نقاط > 0 من رصيد اليد) ياخذ المتراكم
-      const actualWinner = result.A > result.B ? "A" : "B";
-      this.cumulativeScores[actualWinner] += released;
-    }
 
     this.phase = "handOver";
     this._checkMatchOver();

@@ -611,7 +611,7 @@ function renderOverlays() {
     const oppTeam = humanTeam === "A" ? "B" : "A";
     const usThem = (team) => (team === humanTeam ? "لنا" : "لهم");
 
-    $("handEndTitle").textContent = r.isCapot ? "كابوت!" : r.isPending ? "تعادل معلّق" : r.isDefeat ? "خسران!" : "انتهت اليد";
+    $("handEndTitle").textContent = r.isCapot ? "كابوت!" : r.isDefeat ? "خسران!" : "انتهت اليد";
     $("handEndDetails").textContent = `لنا: ${r.A} — لهم: ${r.B}`;
 
     const rows = [];

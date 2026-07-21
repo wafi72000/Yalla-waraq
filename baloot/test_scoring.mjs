@@ -1,4 +1,4 @@
-import { scoreHand, PendingPot } from "./js/scoring.js";
+import { scoreHand } from "./js/scoring.js";
 import { makeCard, Suit, Rank, cardValue } from "./js/models.js";
 
 let pass = 0, fail = 0;
@@ -63,7 +63,7 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("صن ناجح: المشتري (A) = 16", result.A, 16);
   check("صن ناجح: الخصم (B) = 10", result.B, 10);
   check("مجموع اليد = 26", result.A + result.B, 26);
-  check("ما فيه خسران ولا تعليق", [result.isDefeat, result.isPending], [false, false]);
+  check("ما فيه خسران", result.isDefeat, false);
 }
 
 // ===== الصن: خسران (المشتري ياخذ صفر تماماً) - كل الـ26 للخصم =====
@@ -79,31 +79,17 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("isDefeat = true", result.isDefeat, true);
 }
 
-// ===== الصن: تعادل تام (65-65 بنط → 6-6 أبناط بقاعدة التقريب → 12-12 نقطة) - بدون دبل: تعليق =====
+// ===== الصن: تعادل تام (65-65 بنط → 6-6 أبناط) بدون دبل - يتقاسمون فوراً، بدون أي تأجيل =====
 {
   const { buyerCards, opponentCards } = buildScenario(null, 55); // A ياخذ آخر أكلة: 55+10=65
   const result = scoreHand({
     tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
     lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 1,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
   });
   check("تعادل صن 65-65: buyerAbnat=opponentAbnat=6", [result.breakdown.buyerAbnat, result.breakdown.opponentAbnat], [6, 6]);
-  check("isPending = true (بدون دبل)", result.isPending, true);
-  check("الخصم (B) ياخذ 12 فوراً", result.B, 12);
-  check("المشتري (A) صفر الآن، pendingAmount=12", [result.A, result.pendingAmount], [0, 12]);
-  check("pendingTeam = A", result.pendingTeam, "A");
-}
-
-// ===== الصن: نفس التعادل لكن مع دبل حكم فعّال (doubleMultiplier>1) - خسران فوري على المشتري، بدون تعليق =====
-{
-  const { buyerCards, opponentCards } = buildScenario(null, 55);
-  const result = scoreHand({
-    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
-    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 2,
-  });
-  check("تعادل + دبل فعّال = خسران فوري (مش تعليق)", [result.isPending, result.isDefeat], [false, true]);
-  check("المشتري صفر، الخصم ياخذ كل شي (26×2=52)", [result.A, result.B], [0, 52]);
+  check("يتقاسمون فوراً: كلاهما 12 (6×2)", [result.A, result.B], [12, 12]);
+  check("ما فيه خسران", result.isDefeat, false);
 }
 
 // ===== الحكم: نجاح واضح (المشتري 86+10=96 → 10 أبناط. الخصم 66 → 7. المجموع 17) =====
@@ -134,21 +120,68 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("isDefeat = true", result.isDefeat, true);
 }
 
-// ===== الحكم: تعادل تام (المشتري ياخذ آخر أكلة: 71+10=81. الخصم: 81) - بدون دبل: تعليق =====
+// ===== الحكم: تعادل تام (81-81) بدون دبل - يتقاسمون فوراً (8-8)، بدون أي تأجيل =====
 {
   const trumpSuit = Suit.HEARTS;
   const { buyerCards, opponentCards } = buildScenario(trumpSuit, 71);
   const result = scoreHand({
     tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
     lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 1,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
   });
   check("تعادل حكم 81-81: كلاهما 8 أبناط", [result.breakdown.buyerAbnat, result.breakdown.opponentAbnat], [8, 8]);
-  check("isPending = true (بدون دبل)", result.isPending, true);
-  check("الخصم (B) ياخذ 8 فوراً، المشتري معلّق 8", [result.B, result.A, result.pendingAmount], [8, 0, 8]);
+  check("يتقاسمون فوراً: كلاهما 8", [result.A, result.B], [8, 8]);
+  check("ما فيه خسران", result.isDefeat, false);
 }
 
-// ===== الحكم: نفس التعادل مع دبل فعّال - خسران فوري (بدون تعليق) =====
+// ===== دبل فعّال - الأبناط (مع المشاريع) تحدد الفائز مباشرة، ياخذ كل شي، بدون تقاسم =====
+
+// حالة 1: صن دبل - المشتري 64 بنط، الخصم 66 بنط → المشتري خسران، الخصم ياخذ 52 (26×2)
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 54); // 54+10=64
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 2,
+  });
+  check("صن دبل، المشتري أقل (64 مقابل 66): خسران، الخصم=52", [result.A, result.B, result.isDefeat], [0, 52, true]);
+}
+
+// حالة 2: صن دبل - المشتري 66 بنط، الخصم 64 بنط → المشتري فايز، ياخذ 52 كاملة
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 56); // 56+10=66
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 2,
+  });
+  check("صن دبل، المشتري أكثر (66 مقابل 64): فايز، ياخذ 52 كاملة", [result.A, result.B, result.isDefeat], [52, 0, false]);
+}
+
+// حالة 3: صن دبل - المشتري 56 بنط (أقل بالورق وحده)، لكن مشروع سرا (4) يقلب النتيجة لصالحه تحت الدبل
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 46); // 46+10=56
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 4, B: 0 }, doubleMultiplier: 2,
+  });
+  check("صن دبل + مشروع يقلب النتيجة: المشتري فايز، ياخذ 60 ((26+4)×2)", [result.A, result.B, result.isDefeat], [60, 0, false]);
+}
+
+// حالة 4: حكم دبل - نجاح واضح بدون دبل يصير تقاسم (10/7)، مع دبل يكسح المشتري كل شي
+{
+  const trumpSuit = Suit.HEARTS;
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 86);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, doubleMultiplier: 3,
+  });
+  check("حكم دبل ×3: المشتري ياخذ كل شي بدون تقاسم = (16+2)×3=54", [result.A, result.B], [54, 0]);
+}
+
+// حالة 5: حكم دبل - تعادل بالورق (81-81) بدون مشاريع → المجموع الشامل يتساوى أيضاً → خسران فوري على المشتري
 {
   const trumpSuit = Suit.HEARTS;
   const { buyerCards, opponentCards } = buildScenario(trumpSuit, 71);
@@ -157,24 +190,10 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
     lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 }, doubleMultiplier: 2,
   });
-  check("تعادل حكم + دبل = خسران فوري", [result.isPending, result.isDefeat], [false, true]);
-  check("الخصم ياخذ كل شي (16×2=32)، المشتري صفر", [result.B, result.A], [32, 0]);
+  check("حكم دبل، تعادل شامل: خسران فوري، الخصم ياخذ كل شي (16×2=32)", [result.A, result.B, result.isDefeat], [0, 32, true]);
 }
 
-// ===== الدبل لا يقبل القسمة: نجاح واضح بالحكم مع دبل فعّال (×2) = المشتري ياخذ كل شي، الخصم صفر (بدل التقاسم النسبي) =====
-{
-  const trumpSuit = Suit.HEARTS;
-  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 86); // نفس مثال النجاح (10 مقابل 7 بدون دبل)
-  const result = scoreHand({
-    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
-    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, doubleMultiplier: 3,
-  });
-  check("نجاح + دبل فعّال: المشتري ياخذ كل شي بدون تقاسم = (16+2)×3=54", result.A, 54);
-  check("الخصم صفر رغم إنه كان بياخذ نصيبه لو ما فيه دبل", result.B, 0);
-}
-
-// ===== مشاريع الصن تُضاف بعد تحديد النجاح (مثال: نجاح 76→16 + مشروع سرا 4 = 20) =====
+// ===== مشاريع الصن (بدون دبل) تُضاف بعد تحديد الفائز (مثال: نجاح 76→16 + مشروع سرا 4 = 20) =====
 {
   const { buyerCards, opponentCards } = buildScenario(null, 66);
   const result = scoreHand({
@@ -186,10 +205,10 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("الخصم بدون مشروع = 10 (بدون تغيير)", result.B, 10);
 }
 
-// ===== مشاريع الحكم عند الخسران: تروح كاملة للخصم (مشروع الفريقين مع بعض) =====
+// ===== مشاريع الحكم عند الخسران (بدون دبل): تروح كاملة للخصم (مشروع الفريقين مع بعض) =====
 {
   const trumpSuit = Suit.HEARTS;
-  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 60); // خسران واضح (60 ما يتجاوز نص الـ16)
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 60); // خسران واضح
   const result = scoreHand({
     tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
     lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
@@ -243,23 +262,7 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("B خسر كل شي بس يحتفظ ببلوت (2) رغم الكابوت ضده", result.B, 2);
 }
 
-// ===== الحصالة المعلّقة: تتراكم عبر أيدي متعددة، وتُطلق باليد الحاسمة =====
-{
-  const pot = new PendingPot();
-  const released1 = pot.applyHandResult({ isPending: true, pendingAmount: 12, pendingTeam: "A" });
-  check("يد أولى معلّقة: لا إطلاق بعد", released1, 0);
-  check("الحصالة = 12", pot.amount, 12);
-
-  const released2 = pot.applyHandResult({ isPending: true, pendingAmount: 12, pendingTeam: "A" });
-  check("يد ثانية معلّقة أيضاً: تتراكم لـ24", pot.amount, 24);
-  check("لا إطلاق بعد", released2, 0);
-
-  const released3 = pot.applyHandResult({ isPending: false });
-  check("يد ثالثة حاسمة: تُطلق الحصالة كاملة (24)", released3, 24);
-  check("الحصالة تصفر بعد الإطلاق", pot.amount, 0);
-}
-
-// ===== breakdown: يظهر بالتفاصيل الصحيحة (buyerAbnat/opponentAbnat بدل roundedCardPoints القديمة) =====
+// ===== breakdown: يظهر بالتفاصيل الصحيحة =====
 {
   const { buyerCards, opponentCards } = buildScenario(null, 66);
   const result = scoreHand({
