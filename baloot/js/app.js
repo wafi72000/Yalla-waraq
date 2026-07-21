@@ -991,7 +991,8 @@ function maybeRunAI() {
       if (match.phase !== "playing") return;
       const playerID = match.turnPlayerID;
       const hand = match.hands.get(playerID);
-      const card = aiChooseCard(hand, match.currentTrick, match.trumpSuit, match.partnerOfID, playerID, match.tricksWon);
+      const isBuyerTeam = match.teamOfPlayer(playerID) === match.buyerTeam;
+      const card = aiChooseCard(hand, match.currentTrick, match.trumpSuit, match.partnerOfID, playerID, match.tricksWon, isBuyerTeam);
       if (card) {
         try {
           match.playCard(playerID, card, false);

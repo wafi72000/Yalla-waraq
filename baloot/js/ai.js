@@ -2,26 +2,51 @@
 
 import { BidChoice } from "./bidding.js";
 import { validatePlay } from "./trick.js";
-import { cardValue, strengthIndex } from "./models.js";
+import { cardValue, strengthIndex, Rank } from "./models.js";
 
 /// يحسب قوة يد تقريبية لتحديد هل اللاعب "يشتري" أو يمرر
 function handStrength(hand, suit) {
   return hand.reduce((sum, c) => sum + cardValue(c, suit ?? null), 0);
 }
 
+/// يد حكم "ممتازة" بس تخلّي AI يشتري - معيار مشدّد أعلى من مجرد نقاط إجمالية:
+/// حكم طويل (4+)، أو حكم قصير (3) لكن يملك الولد (أقوى ورقة) - إما مع التسعة كمان، أو بمفرده مع قوة إجمالية كافية.
+/// حكم قصير بدون الولد إطلاقاً - حتى لو نقاطه الإجمالية عالية - يُرفض (تحكّم الحكم أهم من مجموع النقاط الخام)
+function isExcellentHukmHand(hand, trumpSuit) {
+  const trumpCards = hand.filter((c) => c.suit === trumpSuit);
+  const trumpCount = trumpCards.length;
+  const hasJack = trumpCards.some((c) => c.rank === Rank.JACK);
+  const hasNine = trumpCards.some((c) => c.rank === Rank.NINE);
+  const strength = handStrength(hand, trumpSuit);
+  if (trumpCount >= 4 && strength >= 18) return true;
+  if (trumpCount === 3 && hasJack && hasNine) return true;
+  if (trumpCount === 3 && hasJack && strength >= 22) return true;
+  return false;
+}
+
+/// يد صن "ممتازة" بس تخلّي AI يشتري - الصن ما فيه قطع، فالتحكّم الحقيقي يعتمد على آسات/عشرات
+/// موزّعة (ورق ما ينقطع أبداً)، مو مجرد مجموع نقاط. يد بدون أي آس تُرفض دايماً بغض النظر عن باقي قوتها.
+/// آسين أو أكثر = تحكّم مضمون بلونين مختلفين، ممتازة دايماً. آس واحد يحتاج دعم إضافي (عشرات أو قوة عالية).
+function isExcellentSunHand(hand) {
+  const strength = handStrength(hand, null);
+  const aceCount = hand.filter((c) => c.rank === Rank.ACE).length;
+  const tenCount = hand.filter((c) => c.rank === Rank.TEN).length;
+  if (aceCount >= 2) return true;
+  if (aceCount === 1 && tenCount >= 2 && strength >= 20) return true;
+  if (aceCount === 1 && strength >= 25) return true;
+  return false;
+}
+
 /// يقرر قرار المزايدة للاعب AI. availableChoices من BiddingState. flippedSuit للحكم الأول.
 export function aiDecideBid(hand, availableChoices, flippedSuit, round) {
   if (availableChoices.includes(BidChoice.HUKM)) {
     const trumpCandidateSuit = round === 1 ? flippedSuit : strongestOtherSuit(hand, flippedSuit);
-    const strength = handStrength(hand, trumpCandidateSuit);
-    const trumpCount = hand.filter((c) => c.suit === trumpCandidateSuit).length;
-    if (trumpCount >= 3 && strength >= 20) {
+    if (isExcellentHukmHand(hand, trumpCandidateSuit)) {
       return { choice: BidChoice.HUKM, trumpSuitForHukm: round === 2 ? trumpCandidateSuit : null };
     }
   }
   if (availableChoices.includes(BidChoice.SUN)) {
-    const strength = handStrength(hand, null);
-    if (strength >= 18) return { choice: BidChoice.SUN };
+    if (isExcellentSunHand(hand)) return { choice: BidChoice.SUN };
   }
   return { choice: BidChoice.PASS };
 }
@@ -96,7 +121,8 @@ function inferVoidSuits(completedTricks) {
 /// يختار ورقة للرمي - يراعي وضع الشريك: لو شريكه رابح بالشوط الحالي، يلعب بأمان (تغسيل بورقة رخيصة)
 /// لو هو أو خصمه رابح، يحاول ياخذ الشوط لو ممكن، وإلا يرمي أرخص ورقة قانونية
 /// completedTricks (اختياري): تاريخ الأشواط المكتملة - يُستخدم لتتبع فراغات الخصوم عند فتح شوط جديد
-export function aiChooseCard(hand, cardsPlayed, trumpSuit, partnerOfID, playerID, completedTricks = []) {
+/// isBuyerTeam (اختياري): فريق هذا اللاعب هو فريق المشتري - يفيد بفتح الشوط (سحب حكم الخصوم لو الحكم بيده)
+export function aiChooseCard(hand, cardsPlayed, trumpSuit, partnerOfID, playerID, completedTricks = [], isBuyerTeam = false) {
   const legal = hand.filter((card) => {
     try {
       validatePlay({ hand, card, cardsPlayed, trumpSuit, partnerOfID, playerID });
@@ -109,7 +135,7 @@ export function aiChooseCard(hand, cardsPlayed, trumpSuit, partnerOfID, playerID
 
   if (cardsPlayed.length === 0) {
     const voidMap = inferVoidSuits(completedTricks);
-    return chooseOpeningLead(legal, trumpSuit, hand, voidMap, playerID, partnerOfID);
+    return chooseOpeningLead(legal, trumpSuit, hand, voidMap, playerID, partnerOfID, isBuyerTeam, completedTricks.length);
   }
 
   const leadSuit = cardsPlayed[0].card.suit;
@@ -133,7 +159,19 @@ export function aiChooseCard(hand, cardsPlayed, trumpSuit, partnerOfID, playerID
 
 /// يفتح الشوط: يفضّل لون عادي (غير الحكم) عنده فيه ورق كثير (يفرّغ الأطول أول)
 /// يتجنّب يفتح بلون يعرف إن خصمه (مو شريكه) فاضي منه، إلا لو ما فيه خيار ثاني - لأن الخصم يقدر يقطعه بالحكم
-function chooseOpeningLead(legal, trumpSuit, fullHand, voidMap, playerID, partnerOfID) {
+/// isBuyerTeam + trickIndex: تحسين "اللعب بعد الشراء" - فريق المشتري بالحكم (لا الصن) عنده تحكّم حكمي
+/// قوي (3+ ورقة) بالأشواط المبكرة (أول 3) يفضّل يسحب حكم الخصوم بأقوى حكم عنده أول، قبل لا يثبّت
+/// أوراقه القوية بالألوان الثانية - يمنع الخصم من قطعها لاحقاً بحكم متبقّي بيده
+function chooseOpeningLead(legal, trumpSuit, fullHand, voidMap, playerID, partnerOfID, isBuyerTeam = false, trickIndex = 0) {
+  if (trumpSuit !== null && isBuyerTeam) {
+    const trumpInHand = fullHand.filter((c) => c.suit === trumpSuit);
+    const trumpInLegal = legal.filter((c) => c.suit === trumpSuit);
+    if (trumpInHand.length >= 3 && trumpInLegal.length > 0 && trickIndex < 3) {
+      const sorted = [...trumpInLegal].sort((a, b) => strengthIndex(a, trumpSuit) - strengthIndex(b, trumpSuit));
+      return sorted[0]; // الأقوى حكم عنده - يسحب حكم الخصوم
+    }
+  }
+
   const nonTrump = legal.filter((c) => c.suit !== trumpSuit);
   let pool = nonTrump.length > 0 ? nonTrump : legal;
 

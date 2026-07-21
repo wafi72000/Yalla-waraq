@@ -1,5 +1,6 @@
-// يثبّت: تحميل الصفحة، بدء مباراة، والوصول لمرحلة اللعب أو المزايدة عبر الواجهة (بمحاكاة نقرات)
-// ملاحظة: الإنسان قد لا يحصل على دور بالمزايدة إطلاقاً لو AI اشترى قبله (سلوك صحيح، مو خلل)
+// يثبّت: تحميل الصفحة، بدء مباراة، والوصول لمرحلة اللعب الفعلي عبر الواجهة (بمحاكاة نقرات)
+// ملاحظة: AI محافظ (يشتري بس بيد ممتازة) - المزايدة ممكن تاخذ أكثر من جولة أو تنتهي بصكة ميتة
+// وتُعاد أكثر من مرة قبل ما حد يشتري فعلياً؛ الحلقة تحت تغطي كل هالاحتمالات لحد ما نوصل لمرحلة اللعب
 import { JSDOM } from "jsdom";
 import fs from "fs";
 
@@ -36,44 +37,56 @@ async function waitForActionableState(maxMs = 10000) {
   return "timeout";
 }
 
-const state = await waitForActionableState();
+let state = await waitForActionableState();
 check("وصلت اللعبة لحالة قابلة للتفاعل خلال 10 ثواني (مو عالقة)", state !== "timeout", true);
-console.log(`(الحالة الفعلية: ${state})`);
+console.log(`(الحالة الأولية: ${state})`);
 
-if (state === "human-bidding") {
-  const bidBtns = document.querySelectorAll(".bid-btn");
-  check("فيه أزرار مزايدة معروضة لدور الإنسان", bidBtns.length > 0, true);
-  bidBtns[bidBtns.length - 1].dispatchEvent(new window.Event("click", { bubbles: true }));
-  await new Promise((r) => setTimeout(r, 200));
-  // ملاحظة: توست AI (مثل "فهد: بس") طبيعي وقد يظهر بنفس التوقيت بالصدفة - نتحقق من نص التوست
-  // نفسه (لو ظاهر) يطابق رسالة خطأ حقيقية، بدل نعتبر أي توست ظاهر = خطأ
-  const toastText = document.getElementById("toast").textContent || "";
-  const looksLikeError = /مو دورك|انتهت بالفعل|صكّة ميتة|غير متاح|يتطلب إعلان|يجب يكون/.test(toastText);
-  check("بعد مزايدة الإنسان، ما ظهر خطأ حقيقي بالتوست", looksLikeError, false);
-
-  // لو مزايدة الإنسان أنهت حكم معلّق (بس منه)، ممكن يفتح دور الإنسان بمزايدة الدبل (مو AI) - قد يتكرر أكثر من مرة
-  // (دبل الحكم مفتوح دائماً، فممكن يتصاعد لعدة جولات) - نكمّل بالضغط على الخيار "الآمن" كل مرة لحد ما يبدأ اللعب الفعلي
-  for (let i = 0; i < 6; i++) {
-    await new Promise((r) => setTimeout(r, 300));
-    const doublingVisible = !document.getElementById("doublingBar").classList.contains("hidden");
-    const sunDoublingVisible = !document.getElementById("sunDoublingBar").classList.contains("hidden");
-    if (doublingVisible) {
-      const proceedBtn = [...document.querySelectorAll("#doublingChoices .double-btn")].find((b) => b.textContent.includes("ابدأ اللعب"));
-      if (proceedBtn) proceedBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
-      else break; // مو دور الإنسان بالضبط (ينتظر AI) - نطلع من الحلقة، الـAI بيكمّل تلقائياً
-    } else if (sunDoublingVisible) {
-      const normalBtn = [...document.querySelectorAll("#sunDoublingChoices .double-btn")].find((b) => b.textContent.includes("لعب عادي"));
-      if (normalBtn) normalBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
-      else break;
-    } else {
-      break; // ما فيه نافذة دبل مفتوحة - انتهينا، أو اللعب بدأ فعلاً
+// AI المحافظ الجديد (يشتري بس بيد ممتازة) يخلي المزايدة أحياناً تاخذ جولة ثانية، أو تنتهي بصكة ميتة
+// وتُعاد أكثر من مرة قبل أي شراء فعلي - نلف عبر كل هالاحتمالات لحد ما نوصل فعلياً لمرحلة اللعب
+let firstBiddingChecked = false;
+let loopAttempts = 0;
+while (state !== "playing" && loopAttempts < 6) {
+  loopAttempts++;
+  if (state === "human-bidding") {
+    const bidBtns = document.querySelectorAll(".bid-btn");
+    if (!firstBiddingChecked) {
+      check("فيه أزرار مزايدة معروضة لدور الإنسان", bidBtns.length > 0, true);
+      firstBiddingChecked = true;
     }
+    if (bidBtns.length === 0) break;
+    bidBtns[bidBtns.length - 1].dispatchEvent(new window.Event("click", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 200));
+    if (loopAttempts === 1) {
+      // ملاحظة: توست AI (مثل "فهد: بس") طبيعي وقد يظهر بنفس التوقيت بالصدفة - نتحقق من نص التوست
+      // نفسه (لو ظاهر) يطابق رسالة خطأ حقيقية، بدل نعتبر أي توست ظاهر = خطأ
+      const toastText = document.getElementById("toast").textContent || "";
+      const looksLikeError = /مو دورك|انتهت بالفعل|صكّة ميتة|غير متاح|يتطلب إعلان|يجب يكون/.test(toastText);
+      check("بعد مزايدة الإنسان، ما ظهر خطأ حقيقي بالتوست", looksLikeError, false);
+    }
+    // لو مزايدة الإنسان أنهت حكم معلّق (بس منه)، ممكن يفتح دور الإنسان بمزايدة الدبل (مو AI) - قد يتكرر أكثر من مرة
+    // (دبل الحكم مفتوح دائماً، فممكن يتصاعد لعدة جولات) - نكمّل بالضغط على الخيار "الآمن" كل مرة لحد ما يبدأ اللعب الفعلي
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => setTimeout(r, 300));
+      const doublingVisible = !document.getElementById("doublingBar").classList.contains("hidden");
+      const sunDoublingVisible = !document.getElementById("sunDoublingBar").classList.contains("hidden");
+      if (doublingVisible) {
+        const proceedBtn = [...document.querySelectorAll("#doublingChoices .double-btn")].find((b) => b.textContent.includes("ابدأ اللعب"));
+        if (proceedBtn) proceedBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
+        else break; // مو دور الإنسان بالضبط (ينتظر AI) - نطلع من الحلقة، الـAI بيكمّل تلقائياً
+      } else if (sunDoublingVisible) {
+        const normalBtn = [...document.querySelectorAll("#sunDoublingChoices .double-btn")].find((b) => b.textContent.includes("لعب عادي"));
+        if (normalBtn) normalBtn.dispatchEvent(new window.Event("click", { bubbles: true }));
+        else break;
+      } else {
+        break; // ما فيه نافذة دبل مفتوحة - انتهينا، أو اللعب بدأ فعلاً
+      }
+    }
+  } else if (state === "dead") {
+    await new Promise((r) => setTimeout(r, 1500)); // ننتظر إعادة التوزيع التلقائية (advanceToNextHand بعد 1.2 ثانية)
   }
-} else if (state === "playing") {
-  check("مرحلة اللعب وصلت بنجاح", true, true);
-} else if (state === "dead") {
-  check("صكّة ميتة اكتُشفت بشكل صحيح", true, true);
+  state = await waitForActionableState(8000);
 }
+check("وصلنا لمرحلة اللعب الفعلي (بعد أي عدد من جولات المزايدة/الصكك الميتة)", state, "playing");
 
 // ===== نمتد أبعد من المرحلة الأولى: ننتظر وصول دور فعلي للإنسان بالرمي، ونجرّب رمي ورقة فعلياً =====
 async function waitForEnabledCard(maxMs = 20000) {
