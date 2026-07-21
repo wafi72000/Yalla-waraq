@@ -152,7 +152,6 @@ function announceTurnChangeIfNew() {
   if (match._lastAnnouncedTurnKey === key) return;
   match._lastAnnouncedTurnKey = key;
   showChatBubble(match.turnPlayerID, "دورك");
-  speak(BID_SPEECH.TURN);
 }
 
 /// شارة دائمة تحت صورة المشتري (صن/حكم♥) تبقى طول اليد - بدل فقاعة مؤقتة تختفي بعد ثوانٍ
@@ -893,14 +892,19 @@ function announceAIBid(playerID, choice, round) {
   showToast(`${name} اشترى ${labels[choice]}!`);
 }
 
+let aiActionPending = false; // يمنع جدولة أكثر من setTimeout واحد لإجراء AI بنفس الوقت - حماية من سباقات نادرة
+
 function maybeRunAI() {
   if (!match || match.matchOver) return;
   if (match.completedTrick) return; // شوط لسه ينتظر يُكسح - ننتظر afterAction تتولى الوقفة والاستمرار
+  if (aiActionPending) return; // فيه إجراء AI مجدول أصلاً بانتظار وقته - ما نجدول وحد ثاني فوقه
 
   if (match.phase === "bidding" && !match.bidding.isDead) {
     const current = match.bidding.currentPlayerID;
     if (AI_IDS.includes(current)) {
+      aiActionPending = true;
       setTimeout(() => {
+        aiActionPending = false;
         if (match.phase !== "bidding") return;
         const hand = match.hands.get(current);
         const choices = match.bidding.availableChoices();
@@ -920,7 +924,10 @@ function maybeRunAI() {
   }
 
   if (match.bidding?.isDead && match.phase === "dead") {
+    aiActionPending = true;
     setTimeout(() => {
+      aiActionPending = false;
+      if (match.phase !== "dead") return;
       match.advanceToNextHand();
       match._lastSpokenRound = null;
       match._projectsRevealed = false;
@@ -937,7 +944,9 @@ function maybeRunAI() {
     const humanTeam = teamOfPlayer(HUMAN_ID);
     if (teamToAct !== humanTeam) {
       // دور فريق AI بالكامل (سالم وفهد) - يقرر تلقائياً
+      aiActionPending = true;
       setTimeout(() => {
+        aiActionPending = false;
         if (match.phase !== "doubling") return;
         const aiMemberID = AI_IDS.find((id) => teamOfPlayer(id) === teamToAct);
         const hand = match.hands.get(aiMemberID);
@@ -968,7 +977,9 @@ function maybeRunAI() {
     const humanTeam = teamOfPlayer(HUMAN_ID);
     if (match.opponentTeam !== humanTeam) {
       // فريق AI هو الخصم - يقرر تلقائياً (معيار بسيط: يدبل لو متأخر بوضوح، غير كذا يلعب عادي)
+      aiActionPending = true;
       setTimeout(() => {
+        aiActionPending = false;
         if (match.phase !== "sunDoubling") return;
         const myScore = match.cumulativeScores[match.opponentTeam];
         const theirScore = match.cumulativeScores[match.buyerTeam];
@@ -987,7 +998,9 @@ function maybeRunAI() {
   }
 
   if (match.phase === "playing" && AI_IDS.includes(match.turnPlayerID)) {
+    aiActionPending = true;
     setTimeout(() => {
+      aiActionPending = false;
       if (match.phase !== "playing") return;
       const playerID = match.turnPlayerID;
       const hand = match.hands.get(playerID);
