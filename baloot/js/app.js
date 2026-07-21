@@ -234,11 +234,20 @@ function renderCardBacks() {
 
 const trickCardElements = new Map(); // card.id -> DOM element - نفس فكرة كاش يدّك، يمنع هدم/إعادة بناء الصور بالميدان
 
+let flippedCardElement = null; // كاش نفس عنصر الورقة المفروشة - يمنع الوميض (نفس مشكلة handRow/trickZone سابقاً)
+
 function renderCenterArea() {
   const flippedZone = $("flippedCardZone");
-  flippedZone.innerHTML = "";
   if (match.phase === "bidding" && match.flippedCard) {
-    flippedZone.appendChild(cardDisplay(match.flippedCard));
+    if (!flippedCardElement || flippedCardElement.dataset.cardId !== String(match.flippedCard.id)) {
+      flippedZone.innerHTML = "";
+      flippedCardElement = cardDisplay(match.flippedCard);
+      flippedZone.appendChild(flippedCardElement);
+    }
+    // لو نفس الورقة (id) موجودة أصلاً بالـDOM، ما نلمسها إطلاقاً - يمنع أي إعادة تحميل للصورة
+  } else {
+    if (flippedZone.firstChild) flippedZone.innerHTML = "";
+    flippedCardElement = null;
   }
 
   const trickZone = $("trickZone");
@@ -472,8 +481,8 @@ function applyDynamicCardSize(row, cardCount) {
 const handCardElements = new Map(); // card.id -> DOM element - يُعاد استخدامها بين الرندرات، ما تُهدم إلا لو الورقة خرجت فعلياً من اليد
 let selectedCardID = null; // الورقة "المرفوعة" حالياً (ضغطة أولى) - ضغطة ثانية عليها ترميها بالميدان فعلياً
 
-const ARC_ANGLE_STEP = 7.5; // درجة دوران لكل خطوة عن المنتصف - مروحة حقيقية حول الأفاتار
-const FAN_PIVOT_DISTANCE = 210; // بكسل - المسافة من كل ورقة لنقطة الارتكاز المشتركة (عند الأفاتار تقريباً)؛ كل ما قلّت زاد انحناء القوس
+const ARC_ANGLE_STEP = 4.5; // درجة دوران لكل خطوة عن المنتصف - مروحة حول الأفاتار (كانت 7.5، طلعت واسعة جداً)
+const FAN_PIVOT_DISTANCE = 320; // بكسل - المسافة من كل ورقة لنقطة الارتكاز المشتركة (كانت 210 - قريبة جداً، تعطي انحناء مبالغ فيه)
 const SELECT_LIFT_PX = 18;  // كم ترتفع الورقة وقت اختيارها (ضغطة أولى) قبل رميها
 
 function renderHand() {
