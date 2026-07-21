@@ -472,8 +472,13 @@ function applyDynamicCardSize(row, cardCount) {
     row.dataset.cardStep = String(FIXED_CARD_WIDTH);
     return;
   }
+  // مروحة الورق تدور حول نقطة ارتكاز بعيدة (FAN_PIVOT_DISTANCE) - الورقتان بالطرفين تنزاحان أفقياً
+  // بمقدار FAN_PIVOT_DISTANCE * sin(الزاوية) بسبب الدوران، فوق وبعد التراكب العادي. لازم نحجز
+  // هالمساحة الإضافية مسبقاً وإلا تطلع الأطراف خارج حاوية #app (اللي عندها overflow:hidden) - نفس البلاغ.
+  const maxEdgeAngleDeg = ((cardCount - 1) / 2) * ARC_ANGLE_STEP;
+  const fanOverflowPerSide = FAN_PIVOT_DISTANCE * Math.sin((maxEdgeAngleDeg * Math.PI) / 180);
   const desiredStep = FIXED_CARD_WIDTH - 40; // مسافة مفضّلة أضيق (كانت -22) - تقريب أكبر بين الورق
-  const maxAllowedStep = (containerWidth - FIXED_CARD_WIDTH) / (cardCount - 1);
+  const maxAllowedStep = (containerWidth - FIXED_CARD_WIDTH - 2 * fanOverflowPerSide) / (cardCount - 1);
   const step = Math.max(12, Math.min(desiredStep, maxAllowedStep)); // 12px حد أدنى (كان 20) - يسمح بتراكب أكبر لضمان الكل يفضل جوّه الشاشة
   row.dataset.cardStep = String(step);
 }
