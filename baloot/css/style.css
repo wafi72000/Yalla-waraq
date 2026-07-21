@@ -17,7 +17,7 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-dark) 70%);
+  background: var(--felt-dark); /* لون محايد بسيط بس - خلفية الفلّة الفعلية صارت خاصة بـ.stage وحدها (انظر تحت) */
   color: var(--cream);
   font-family: var(--font-body);
   direction: rtl;
@@ -37,11 +37,17 @@ html, body {
 }
 
 /* ===== شريط علوي: النقاط ===== */
+/* لوحة مستقلة بنفس قوة البنر السفلي (action-frame) - إطار واحد يجمع البيت + النقاط + النشرة،
+   بدون أي اعتماد على خلفية الميدان (.stage) اللي تحته */
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 6px 10px;
 }
 .score-strip { display: flex; gap: 6px; }
 .score-chip {
@@ -71,6 +77,20 @@ html, body {
   align-items: center;
   justify-content: center;
   text-decoration: none;
+}
+
+/* ===== الميدان (الطاولة + يدّك مع بعض) =====
+   هذي الحاوية الوحيدة المسؤولة عن "مظهر" الميدان (خلفية الفلّة). تغيير لعبة الميدان مستقبلاً
+   (لون/نسيج ثاني) يصير بتعديل خاصية background هنا بس - بدون أي أثر على البنر العلوي ولا السفلي. */
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-dark) 70%);
+  border-radius: var(--radius);
+  overflow: visible; /* لازم تبقى visible - مروحة ورق يدّك (hand-area) تعتمد على ظهور جزئي خارج حدودها الأفقية بالتصميم */
 }
 
 /* ===== منطقة الطاولة ===== */
