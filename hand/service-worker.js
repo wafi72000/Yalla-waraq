@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v89"; // v89: إعادة هيكلة الواجهة لـ3 أقسام (رأس/ميدان/أزرار)
+const CACHE_NAME = "hand-game-v90"; // v90: الواجهة تتقلّص تلقائياً بدون سحب عمودي (clamp + قياس حي)
 const ASSETS = [
   "./index.html",
   "./manifest.json",
