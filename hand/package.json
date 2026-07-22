@@ -1,0 +1,13 @@
+{
+  "name": "yalla-waraq-hand",
+  "version": "1.0.0",
+  "description": "لعبة الهند (رامي خليجي) - جزء من منصة يلا ورق",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run_tests.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}
