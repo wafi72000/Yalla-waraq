@@ -1,69 +1,25 @@
-import { Suit, SUIT_SYMBOL, isRedSuit, rankDisplayName } from "./models.js";
+import { isRedSuit } from "./models.js";
 import { MeldKind, isValidSet, isValidRun } from "./meld.js";
-import { HandEngine, DrawSource, HandRuleError } from "./engine.js";
+import { DrawSource, HandRuleError } from "./engine.js";
 import "./declareEngine.js";
 import { scoreTier, tierLabel } from "./endingEngine.js";
 import "./ai.js";
 import { EndingType } from "./escalation.js";
 import { totalPoints } from "./scoring.js";
 import { sounds } from "./sounds.js";
-
-const HUMAN_ID = "human";
-
-const players = [
-  { id: HUMAN_ID, name: "أنت", hand: [] },
-  { id: "ai3", name: "فهد", hand: [] },  // يلعب بعدك مباشرة (مقعده الثابت يمينك)
-  { id: "ai2", name: "خالد", hand: [] }, // ثاني (مقعده الثابت قبالتك)
-  { id: "ai1", name: "سالم", hand: [] }, // آخر واحد قبل ما يرجع لك (مقعده الثابت يسارك)
-];
-
-// مقعد كل لاعب على الطاولة - ثابت بالاسم/المعرّف، مستقل تماماً عن ترتيب الأدوار بالأعلى
-const SEAT_BY_ID = { ai1: "Left", ai2: "Top", ai3: "Right" };
-
-const engine = new HandEngine(players);
+import { cardEl } from "./cards.js";
+import { HUMAN_ID, SEAT_BY_ID } from "./seats.js";
+import { engine } from "./state.js";
+import { runAILoop, setAISpeed } from "./ai-scheduler.js";
 
 // منع تكبير الشاشة بالكامل (نقرتين متتاليتين أو إصبعين) - بعض متصفحات iOS تتجاهل user-scalable=no
 document.addEventListener("dblclick", (e) => e.preventDefault());
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 
 let selectedCardIds = new Set();
-let aiTimer = null;
 
 // ===== أدوات DOM =====
 const $ = (id) => document.getElementById(id);
-
-const FACE_SUIT_NAME = {
-  [Suit.HEARTS]: "heart",
-  [Suit.DIAMONDS]: "diamond",
-  [Suit.CLUBS]: "club",
-  [Suit.SPADES]: "spade",
-};
-const RANK_FILE_NAME = { 11: "jack", 12: "queen", 13: "king", 14: "1" }; // الأص بترقيم المصدر = 1
-
-function cardImagePath(card) {
-  if (card.isJoker) return "../shared/assets/faces/joker.svg";
-  const rankPart = RANK_FILE_NAME[card.rank] ?? String(card.rank);
-  return `../shared/assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
-}
-
-function cardEl(card, { mini = false, selected = false } = {}) {
-  const div = document.createElement("div");
-  div.className = "card" + (mini ? " mini" : "");
-  div.dataset.cardId = card.id;
-
-  // صورة حقيقية لكل الورق (نفس مصدر الصور الاحترافي)، بحجم كامل أو مصغّر (mini) حسب السياق
-  const img = document.createElement("img");
-  img.src = cardImagePath(card);
-  img.alt = card.isJoker ? "جوكر" : `${rankDisplayName(card.rank)} ${SUIT_SYMBOL[card.suit]}`;
-  img.className = "face-card-img";
-  img.draggable = false;
-  div.appendChild(img);
-  if (!card.isJoker && isRedSuit(card.suit)) div.classList.add("red");
-  if (card.isJoker) div.classList.add("joker");
-
-  if (selected) div.classList.add("selected");
-  return div;
-}
 
 function showToast(message) {
   sounds.invalid();
@@ -77,7 +33,7 @@ function showToast(message) {
 
 // ===== الرسم =====
 
-function render() {
+export function render() {
   renderHandScorePanel();
   renderOpponents();
   renderMelds();
@@ -881,37 +837,6 @@ function afterHumanAction() {
   runAILoop();
 }
 
-const AI_SPEEDS = { slow: 1200, medium: 500, fast: 150 };
-let aiSpeed = "medium";
-
-function oppSlotElementFor(playerID) {
-  const seat = SEAT_BY_ID[playerID];
-  return seat ? $(`opp${seat}`) : null;
-}
-
-function runAILoop() {
-  const s = engine.state;
-  if (s.isRoundOver) { render(); onRoundOver(); return; }
-  if (s.isStuck) { render(); onStuck(); return; }
-  if (s.currentTurnPlayerID === HUMAN_ID) { render(); return; }
-  render();
-  clearTimeout(aiTimer);
-  const actingPlayerID = s.currentTurnPlayerID;
-  const discardCountBefore = s.discardPile.length;
-  aiTimer = setTimeout(() => {
-    engine.performAITurn(actingPlayerID);
-    sounds.draw();
-    if (s.discardPile.length > discardCountBefore) sounds.discard();
-    render();
-    const slot = oppSlotElementFor(actingPlayerID);
-    if (slot) {
-      slot.classList.add("opp-acting");
-      setTimeout(() => slot.classList.remove("opp-acting"), 260);
-    }
-    runAILoop();
-  }, AI_SPEEDS[aiSpeed]);
-}
-
 // ===== نوافذ النهاية =====
 
 function fillScoreTable(tableEl) {
@@ -930,7 +855,7 @@ function fillScoreTable(tableEl) {
   }
 }
 
-function onRoundOver() {
+export function onRoundOver() {
   $("roundEndTitle").textContent = engine.state.roundEndedReason ?? "انتهت الجولة";
   $("roundEndDetails").textContent = "النقاط بعد هذي الجولة:";
   fillScoreTable($("roundEndScoreTable"));
@@ -980,7 +905,7 @@ function triggerCelebration(tier) {
   sounds.celebrate(absScore);
 }
 
-function onStuck() {
+export function onStuck() {
   $("stuckOverlay").classList.remove("hidden");
 }
 
@@ -1046,7 +971,7 @@ document.querySelectorAll(".speed-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".speed-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    aiSpeed = btn.dataset.speed;
+    setAISpeed(btn.dataset.speed);
   });
 });
 
