@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v90"; // v90: الواجهة تتقلّص تلقائياً بدون سحب عمودي (clamp + قياس حي)
+const CACHE_NAME = "hand-game-v91"; // v91: table-area بحجم محتوى فعلي (مو ارتفاع مفروض) - يمنع مساحة فاضية وسحب
 const ASSETS = [
   "./index.html",
   "./manifest.json",
