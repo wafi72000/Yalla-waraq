@@ -17,6 +17,7 @@ import { cardValue } from "./models.js";
 const LAST_TRICK_BONUS = 10; // نفس القيمة بالنظامين
 const CAPOT_POINTS = { sun: 44, hukm: 25 };
 const FULL_ABNAT = { sun: 13, hukm: 16 }; // المجموع الكامل قبل مضاعفة الصن
+const FULL_RAW = { sun: 130, hukm: 162 }; // المجموع الكامل الخام - يحدد عتبة النص للنجاح/الخسران/التعادل
 const SUN_MULTIPLIER = 2; // مضاعفة الصن الأصيلة والثابتة - تُطبَّق دايماً، بغض النظر عن أي دبل صن
 
 /// يقرّب بنط خام لنقطة واحدة: آحاد 5 أو أقل ينزل، 6 أو أكثر يطلع (مختلف عن Math.round عند آحاد=5 بالضبط)
@@ -85,29 +86,35 @@ export function scoreHand({
   const cardTotals = { ...cardTotalsRaw };
   cardTotals[lastTrickWinnerTeam] += LAST_TRICK_BONUS;
 
-  const buyerAbnat = roundToAbnat(cardTotals[buyerTeam]);
-  const opponentAbnat = roundToAbnat(cardTotals[opponentTeam]);
+  const buyerRaw = cardTotals[buyerTeam];
+  const opponentRaw = cardTotals[opponentTeam];
+  const buyerAbnat = roundToAbnat(buyerRaw);
+  const opponentAbnat = roundToAbnat(opponentRaw);
   const full = FULL_ABNAT[system];
+  const half = FULL_RAW[system] / 2; // نص الخام (81 حكم، 65 صن) - عتبة النجاح/الخسران/التعادل الحقيقية
   const breakdown = { ...breakdownBase, buyerAbnat, opponentAbnat };
 
   if (doubleMultiplier > 1) {
-    // ===== دبل فعّال: مقارنة شاملة (بنط الورق × مضاعف النظام + مشروع كل فريق) - المشروع ممكن يقلب النتيجة =====
-    const buyerTotal = buyerAbnat * sysMultiplier + buyerProjects;
-    const opponentTotal = opponentAbnat * sysMultiplier + opponentProjects;
+    // ===== دبل فعّال: مقارنة شاملة بالخام (بطاقة + مشروع محوَّل لمعادله الخام ×10) - يمنع نفس مشكلة التقريب،
+    // والمشروع ممكن يقلب النتيجة. المكسب النهائي (pot) يُحسب بالأبناط زي العادة =====
+    const buyerCompare = buyerRaw + buyerProjects * 10;
+    const opponentCompare = opponentRaw + opponentProjects * 10;
     const pot = (full * sysMultiplier + allProjects) * doubleMultiplier;
-    const buyerWins = buyerTotal > opponentTotal; // تعادل المجموع الشامل يُعامَل كخسران فوري على المشتري
+    const buyerWins = buyerCompare > opponentCompare; // تعادل المجموع الشامل يُعامَل كخسران فوري على المشتري
     const finalPoints = buyerWins ? { [buyerTeam]: pot, [opponentTeam]: 0 } : { [buyerTeam]: 0, [opponentTeam]: pot };
     return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: !buyerWins };
   }
 
-  // ===== بدون دبل: الأبناط وحدها تحدد الفائز - بدون أي تأجيل أو تعليق =====
-  if (buyerAbnat < opponentAbnat) {
+  // ===== بدون دبل: البنط الخام (ورق فقط، بدون مشاريع) يحدد الفائز مباشرة - بدون أي تأجيل أو تعليق =====
+  // التعادل الحقيقي الوحيد رياضياً هو بالضبط buyerRaw===half (81 حكم أو 65 صن) - المقارنة بالخام تمنع
+  // "منطقة تعادل مصطنعة" كانت تظهر بمقارنة الأبناط المقرَّبة (أي رقم قريب من النص كان يطلع تعادل غلط)
+  if (buyerRaw < half) {
     // خسران - كل نقاط اليد (المجموع الكامل) + كل المشاريع (الفريقين) تروح للخصم بالكامل
     const finalPoints = { [buyerTeam]: 0, [opponentTeam]: full * sysMultiplier + allProjects };
     return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: true };
   }
 
-  // نجاح أو تعادل تام - كل فريق ياخذ نصيبه + مشروعه الخاص فوراً (بالتعادل يتساويان تلقائياً)
+  // نجاح أو تعادل تام (buyerRaw >= half) - كل فريق ياخذ نصيبه بالأبناط + مشروعه الخاص فوراً
   const finalPoints = {
     [buyerTeam]: buyerAbnat * sysMultiplier + buyerProjects,
     [opponentTeam]: opponentAbnat * sysMultiplier + opponentProjects,

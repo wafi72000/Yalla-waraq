@@ -310,5 +310,54 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("breakdown.cardPointsRaw موجودة حتى بالكابوت", typeof result.breakdown.cardPointsRaw, "object");
 }
 
+// ===== تصحيح مهم: المقارنة بالخام مباشرة تمنع "منطقة تعادل مصطنعة" من التقريب =====
+// (80 و82 كلاهما يقرّب لنفس الأبناط (8) - بالتقريب فقط كانا يطلعان تعادل غلط، والصح: 80=خسران واضح، 82=نجاح واضح)
+
+// حكم: 80 خام (أقل بواحد من النص 81) = خسران حقيقي، مو تعادل
+{
+  const trumpSuit = Suit.HEARTS;
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 80);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
+    lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("حكم 80 خام (تحت النص بواحد): خسران حقيقي مو تعادل", [result.A, result.B, result.isDefeat], [0, 16, true]);
+}
+
+// حكم: 82 خام (أكثر بواحد من النص 81) = نجاح حقيقي، مو تعادل
+{
+  const trumpSuit = Suit.HEARTS;
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 82);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
+    lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("حكم 82 خام (فوق النص بواحد): نجاح حقيقي، ما يُعامل كخسران", result.isDefeat, false);
+}
+
+// صن: 64 خام (أقل بواحد من النص 65) = خسران حقيقي
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 64);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("صن 64 خام (تحت النص بواحد): خسران حقيقي مو تعادل", [result.A, result.B, result.isDefeat], [0, 26, true]);
+}
+
+// صن: 66 خام (أكثر بواحد من النص 65) = نجاح حقيقي
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 66);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("صن 66 خام (فوق النص بواحد): نجاح حقيقي، ما يُعامل كخسران", result.isDefeat, false);
+}
+
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
 process.exit(fail > 0 ? 1 : 0);
