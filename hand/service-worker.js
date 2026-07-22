@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v88"; // v88: أصول الورق انتقلت لمجلد مشترك (../shared/assets) - لازم كاش جديد
+const CACHE_NAME = "hand-game-v89"; // v89: إعادة هيكلة الواجهة لـ3 أقسام (رأس/ميدان/أزرار)
 const ASSETS = [
   "./index.html",
   "./manifest.json",
