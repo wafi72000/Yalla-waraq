@@ -41,9 +41,9 @@ const FACE_SUIT_NAME = {
 const RANK_FILE_NAME = { 11: "jack", 12: "queen", 13: "king", 14: "1" }; // الأص بترقيم المصدر = 1
 
 function cardImagePath(card) {
-  if (card.isJoker) return "assets/faces/joker.svg";
+  if (card.isJoker) return "../shared/assets/faces/joker.svg";
   const rankPart = RANK_FILE_NAME[card.rank] ?? String(card.rank);
-  return `assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
+  return `../shared/assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
 }
 
 function cardEl(card, { mini = false, selected = false } = {}) {

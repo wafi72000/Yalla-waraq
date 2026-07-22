@@ -12,7 +12,7 @@ const RANK_FILE_NAME = { 11: "jack", 12: "queen", 13: "king", 14: "1" }; // ال
 
 function cardImagePath(card) {
   const rankPart = RANK_FILE_NAME[card.rank] ?? String(card.rank);
-  return `assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
+  return `../shared/assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
 }
 
 /// تحميل مسبق لكل صور الورق الـ32 فور تحميل الصفحة (قبل حتى ما يضغط "ابدأ") - يملأ كاش المتصفح
