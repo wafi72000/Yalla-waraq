@@ -166,23 +166,29 @@ function showToast(message) {
 
 // ===== الرندر الرئيسي =====
 
+/// يشغّل دالة رندر فرعية بمعزل عن الباقي - لو رمت خطأ، نسجّله ونكمل الباقي بدل ما نوقف كل تحديثات الواجهة
+/// (قبل كذا: خطأ بدالة وحدة كان يمنع كل الدوال اللي بعدها بالتسلسل من التحديث، فتضل الواجهة عالقة جزئياً)
+function safeRender(fn) {
+  try { fn(); } catch (e) { console.error(`[render] ${fn.name || "anonymous"} فشلت:`, e); }
+}
+
 function render() {
   $("startOverlay").classList.toggle("hidden", !!match);
   if (!match) return;
-  renderScores();
-  renderSeatsActiveTurn();
-  renderCardBacks();
-  renderCenterArea();
-  renderBuyerBadge();
-  renderBiddingBar();
-  renderDoublingBar();
-  renderSunDoublingBar();
-  renderHand();
-  renderBalootButton();
-  renderProjectsCheckButton();
-  renderOverlays();
-  announceTurnChangeIfNew();
-  announceBiddingRoundIfNew();
+  safeRender(renderScores);
+  safeRender(renderSeatsActiveTurn);
+  safeRender(renderCardBacks);
+  safeRender(renderCenterArea);
+  safeRender(renderBuyerBadge);
+  safeRender(renderBiddingBar);
+  safeRender(renderDoublingBar);
+  safeRender(renderSunDoublingBar);
+  safeRender(renderHand);
+  safeRender(renderBalootButton);
+  safeRender(renderProjectsCheckButton);
+  safeRender(renderOverlays);
+  safeRender(announceTurnChangeIfNew);
+  safeRender(announceBiddingRoundIfNew);
 }
 
 /// يعلن دور اللاعب الحالي (AI بس) بفقاعة عند صورته مباشرة + صوت - بدل نص مركزي عام
@@ -318,7 +324,8 @@ function renderCenterArea() {
     // دور اللاعبين أثناء اللعب يُعلن بفقاعة عند صورتهم مباشرة (announceTurnChangeIfNew) - مو نص مركزي هنا
     turnIndicator.textContent = "";
   } else if (match.phase === "bidding" && !match.bidding.isDead) {
-    turnIndicator.textContent = match.bidding.currentPlayerID === HUMAN_ID ? "دورك بالمزايدة" : `مزايدة ${displayName(match.bidding.currentPlayerID)}`;
+    const currentBidder = match.bidding.currentPlayerID;
+    turnIndicator.textContent = !currentBidder ? "" : currentBidder === HUMAN_ID ? "دورك بالمزايدة" : `مزايدة ${displayName(currentBidder)}`;
   } else if (match.bidding?.isDead) {
     turnIndicator.textContent = "صكّة ميتة - إعادة توزيع";
   } else {
