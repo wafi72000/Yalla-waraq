@@ -19,6 +19,7 @@
 html, body {
   margin: 0;
   height: 100%;
+  overflow: hidden; /* يمنع أي سحب عمودي/أفقي كلياً */
   background: var(--felt-dark); /* لون محايد بسيط - خلفية الفلّة الفعلية صارت خاصة بـ.stage وحدها (انظر تحت) */
   color: var(--cream);
   font-family: var(--font-body);
@@ -31,9 +32,10 @@ html, body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  height: 100vh;
+  height: 100dvh; /* ثابت بالضبط (مو min-height) + overflow:hidden تحت - يضمن عدم السحب إطلاقاً */
+  overflow: hidden;
+  padding: max(6px, env(safe-area-inset-top)) 8px max(6px, env(safe-area-inset-bottom));
   gap: 4px;
 }
 
@@ -141,8 +143,8 @@ html, body {
 /* ===== طاولة الخصوم (قبالة / يمين / يسار) ===== */
 .table-layout {
   position: relative;
-  flex-shrink: 0;
-  height: 110px; /* كانت 122px - قللناها بس بدون ما تقطع محتوى خالد (اسم+دائرة+مروحة+عداد ≈ 106px) */
+  flex-shrink: 1;
+  height: clamp(78px, 13dvh, 110px); /* يتقلّص تلقائياً بالشاشات القصيرة بدل يفرض سحب عمودي */
   margin: 0;
 }
 .opponent-slot {
@@ -277,8 +279,8 @@ html, body {
 
 /* ===== الطاولة ===== */
 .table-area {
-  flex-shrink: 0;
-  height: 350px; /* ثابتة تماماً - كل منطقة تصغّر ورقها تلقائياً (JS) لو احتاجت، بدل الطاولة تكبر */
+  flex-shrink: 1;
+  height: clamp(220px, 38dvh, 350px); /* يتقلّص تلقائياً بالشاشات القصيرة - fitAllMeldZones تتكيّف معه */
   margin: 0 10px;
   display: flex;
   flex-direction: column;
@@ -302,8 +304,8 @@ html, body {
 .melds-top:empty, .melds-bottom:empty { display: none; height: 0; }
 
 .table-middle-row {
-  flex-shrink: 0;
-  height: 130px;
+  flex-shrink: 1;
+  height: clamp(90px, 15dvh, 130px);
   display: flex;
   direction: ltr; /* الصفحة كلها RTL، وبدونها كان flex بيعكس مكان meldsLeft/meldsRight فعلياً (بير فهد يطلع مكان سالم) */
   align-items: center;
@@ -534,7 +536,7 @@ html, body {
 /* ===== يد اللاعب ===== */
 .hand-rows {
   flex: 1;
-  min-height: 200px; /* صفين ورق (92px لكل صف) + فراغات - حد أدنى يحمي يدّك من الانضغاط لو الطاولة كبرت */
+  min-height: 150px; /* صفين ورق + فراغات - حد أدنى يحمي يدّك من الانضغاط الزايد (كان 200، قلّلناه ليفضل مجال أكبر بالشاشات القصيرة) */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -610,8 +612,8 @@ html, body {
   justify-content: center;
   align-content: center;
   flex-wrap: wrap;
-  padding: 8px 6px;
-  min-height: 78px; /* ثابت بغض النظر عن عدد الأزرار الظاهرة - يمنع تحرّك يد اللاعب لما الأزرار تتغيّر */
+  padding: 6px;
+  min-height: clamp(56px, 9dvh, 78px); /* ثابت تقريباً بغض النظر عن عدد الأزرار - يمنع تحرّك يد اللاعب، مرن شوي بالشاشات القصيرة */
   background: rgba(0,0,0,0.3);
   border: 1px solid var(--gold);
   border-radius: var(--radius);

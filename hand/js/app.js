@@ -62,10 +62,20 @@ function fitMeldZone(containerId, maxHeight, minScale = 0.45) {
   el.style.height = `${natural * scale}px`;
 }
 function fitAllMeldZones() {
-  fitMeldZone("meldsTop", 100);
-  fitMeldZone("meldsBottom", 100);
-  fitMeldZone("meldsLeft", 130);
-  fitMeldZone("meldsRight", 130);
+  // نقيس الارتفاع الفعلي المتاح بدل أرقام ثابتة (350/130) - عشان يتكيّف صح مع .table-area المرنة (clamp)
+  // على أي حجم شاشة، بدل ما يفترض حجم واحد بس كان مضبوط عليه قديماً
+  const tableArea = $("tableArea");
+  const middleRow = $("tableMiddleRow");
+  const middleRowHeight = middleRow?.getBoundingClientRect().height || 130;
+  const tableAreaHeight = tableArea?.getBoundingClientRect().height || 350;
+  // الميزانية المتبقية بعد صف الأكوام الأوسط والـgap والـpadding الداخلية (تُقسم بالتساوي بين فوق وتحت)
+  const remaining = Math.max(60, tableAreaHeight - middleRowHeight - 20);
+  const topBottomBudget = remaining / 2;
+
+  fitMeldZone("meldsTop", topBottomBudget);
+  fitMeldZone("meldsBottom", topBottomBudget);
+  fitMeldZone("meldsLeft", middleRowHeight);
+  fitMeldZone("meldsRight", middleRowHeight);
 }
 
 /// يحدّد مكان فقاعة دورك وصندوق المجموع بالضبط تحت منطقة الطاولة (ثابتة الارتفاع) - عشان ظهورهم/اختفاءهم
