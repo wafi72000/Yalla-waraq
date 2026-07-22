@@ -359,5 +359,27 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("صن 66 خام (فوق النص بواحد): نجاح حقيقي، ما يُعامل كخسران", result.isDefeat, false);
 }
 
+// ===== isTie: true بس عند التعادل الحقيقي بالضبط، false لأي حالة ثانية =====
+{
+  const trumpSuit = Suit.HEARTS;
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 71); // 71+10=81 (تعادل)
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("isTie=true عند التعادل الحقيقي (81 خام)", result.isTie, true);
+}
+{
+  const trumpSuit = Suit.HEARTS;
+  const { buyerCards, opponentCards } = buildScenario(trumpSuit, 82);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit, isHukm: true,
+    lastTrickWinnerTeam: "B", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
+  });
+  check("isTie=false عند نجاح واضح (82 خام)", result.isTie, false);
+}
+
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
 process.exit(fail > 0 ? 1 : 0);

@@ -480,6 +480,26 @@ html, body {
 .score-table th { padding: 4px 8px; color: var(--gold); font-family: 'Aref Ruqaa', serif; text-align: center; }
 .score-table tr.score-table-final td { font-weight: 700; color: var(--gold-light); border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); }
 
+.hand-end-info {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(243,210,122,0.3);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.hand-end-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.hand-end-info-row:not(:last-child) { border-bottom: 1px solid rgba(243,210,122,0.15); }
+.hand-end-info-row span:first-child { color: var(--gold-light); }
+.hand-end-info-row span:last-child { font-weight: 700; }
+.hand-end-info-row .outcome-win { color: #6fcf7e; }
+.hand-end-info-row .outcome-loss { color: #e06c6c; }
+.hand-end-info-row .outcome-tie { color: var(--gold-light); }
+
 .scoreboard-big { display: flex; justify-content: center; gap: 30px; margin: 14px 0; }
 .scoreboard-team { text-align: center; }
 .team-label { font-size: 13px; color: rgba(251,246,234,0.7); }

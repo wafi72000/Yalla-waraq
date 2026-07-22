@@ -78,7 +78,7 @@ export function scoreHand({
     const finalPoints = { [capotTeam]: withProjects * doubleMultiplier, [loserTeam]: 0 };
     return {
       ...finalize(finalPoints, { capotTeam, capotBasePoints: base }),
-      isCapot: true, isDefeat: false,
+      isCapot: true, isDefeat: false, isTie: false,
     };
   }
 
@@ -100,9 +100,10 @@ export function scoreHand({
     const buyerCompare = buyerRaw + buyerProjects * 10;
     const opponentCompare = opponentRaw + opponentProjects * 10;
     const pot = (full * sysMultiplier + allProjects) * doubleMultiplier;
+    const isTie = buyerCompare === opponentCompare; // تعادل شامل + دبل = خسران فوري (isDefeat=true رغم isTie)
     const buyerWins = buyerCompare > opponentCompare; // تعادل المجموع الشامل يُعامَل كخسران فوري على المشتري
     const finalPoints = buyerWins ? { [buyerTeam]: pot, [opponentTeam]: 0 } : { [buyerTeam]: 0, [opponentTeam]: pot };
-    return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: !buyerWins };
+    return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: !buyerWins, isTie };
   }
 
   // ===== بدون دبل: البنط الخام (ورق فقط، بدون مشاريع) يحدد الفائز مباشرة - بدون أي تأجيل أو تعليق =====
@@ -111,7 +112,7 @@ export function scoreHand({
   if (buyerRaw < half) {
     // خسران - كل نقاط اليد (المجموع الكامل) + كل المشاريع (الفريقين) تروح للخصم بالكامل
     const finalPoints = { [buyerTeam]: 0, [opponentTeam]: full * sysMultiplier + allProjects };
-    return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: true };
+    return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: true, isTie: false };
   }
 
   // نجاح أو تعادل تام (buyerRaw >= half) - كل فريق ياخذ نصيبه بالأبناط + مشروعه الخاص فوراً
@@ -119,5 +120,5 @@ export function scoreHand({
     [buyerTeam]: buyerAbnat * sysMultiplier + buyerProjects,
     [opponentTeam]: opponentAbnat * sysMultiplier + opponentProjects,
   };
-  return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: false };
+  return { ...finalize(finalPoints, breakdown), isCapot: false, isDefeat: false, isTie: buyerRaw === half };
 }

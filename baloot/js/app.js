@@ -587,6 +587,23 @@ function renderOverlays() {
     $("handEndTitle").textContent = r.isCapot ? "كبوت!" : r.isDefeat ? "خسران!" : "انتهت اليد";
     $("handEndDetails").textContent = `لنا: ${r.A} — لهم: ${r.B}`;
 
+    $("handEndSystem").textContent = match.isHukm ? `حكم ${SUIT_SYMBOL[match.trumpSuit]}` : "صن";
+    $("handEndBuyer").textContent = match.buyerTeam === humanTeam ? "فريقنا" : "الخصم";
+    const outcomeEl = $("handEndOutcome");
+    if (r.isCapot) {
+      outcomeEl.textContent = b.capotTeam === match.buyerTeam ? "ربحانة (كبوت)" : "خسرانة (كبوت)";
+      outcomeEl.className = b.capotTeam === match.buyerTeam ? "outcome-win" : "outcome-loss";
+    } else if (r.isTie) {
+      outcomeEl.textContent = "تعادل";
+      outcomeEl.className = "outcome-tie";
+    } else if (r.isDefeat) {
+      outcomeEl.textContent = "خسرانة";
+      outcomeEl.className = "outcome-loss";
+    } else {
+      outcomeEl.textContent = "ربحانة";
+      outcomeEl.className = "outcome-win";
+    }
+
     const rows = [];
     rows.push(`<tr><th></th><th>لنا</th><th>لهم</th></tr>`);
     if (r.isCapot && b.capotTeam) {
