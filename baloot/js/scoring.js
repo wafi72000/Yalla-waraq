@@ -47,8 +47,10 @@ export function scoreHand({
   const system = isHukm ? "hukm" : "sun";
   const opponentTeam = buyerTeam === "A" ? "B" : "A";
   const sysMultiplier = isHukm ? 1 : SUN_MULTIPLIER;
-  const buyerProjects = projectPointsByTeam[buyerTeam] ?? 0;
-  const opponentProjects = projectPointsByTeam[opponentTeam] ?? 0;
+  // projectPointsByTeam بمقياس "الأبناط الأساسي" (زي البلوت: 2/5/10/40) - نضربه بمضاعف النظام
+  // (×2 بالصن، مضاعفة أصيلة تلقائية تماماً زي نقاط الورق - ×1 بالحكم بدون تغيير)
+  const buyerProjects = (projectPointsByTeam[buyerTeam] ?? 0) * sysMultiplier;
+  const opponentProjects = (projectPointsByTeam[opponentTeam] ?? 0) * sysMultiplier;
   const allProjects = buyerProjects + opponentProjects;
 
   const cardTotalsRaw = computeRawCardPoints(tricksWon, trumpSuit, teamOfPlayer);
@@ -67,11 +69,11 @@ export function scoreHand({
     return { A: finalPoints.A, B: finalPoints.B, breakdown: { ...breakdownBase, ...extra } };
   };
 
-  // ===== كابوت: يستبدل كل الحساب - نقاط ثابتة + مشاريع الفريق نفسه، مضروبة بمعامل الدبل =====
+  // ===== كابوت: يستبدل كل الحساب - نقاط ثابتة + مشاريع الفريق نفسه (مضروبة بمضاعف النظام)، مضروبة بمعامل الدبل =====
   if (capotTeam) {
     const loserTeam = capotTeam === "A" ? "B" : "A";
     const base = CAPOT_POINTS[system];
-    const withProjects = base + (projectPointsByTeam[capotTeam] ?? 0);
+    const withProjects = base + (projectPointsByTeam[capotTeam] ?? 0) * sysMultiplier;
     const finalPoints = { [capotTeam]: withProjects * doubleMultiplier, [loserTeam]: 0 };
     return {
       ...finalize(finalPoints, { capotTeam, capotBasePoints: base }),

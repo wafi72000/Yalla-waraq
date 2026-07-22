@@ -374,7 +374,9 @@ export class BalootMatch {
   }
 }
 
+/// نقاط المشاريع بمقياس "الأبناط" الأساسي (نفس مقياس البلوت: 2) - هذا هو المقياس اللي يتوقعه scoreHand
+/// (يضربه بمضاعف النظام: ×1 حكم، ×2 صن - مو القيم الخام التقليدية 20/50/100/400)
 export function projectPointsOf(project) {
-  const points = { sira: 20, khamseen: 50, mia: 100, arbaamia: 400, baloot: 20 };
+  const points = { sira: 2, khamseen: 5, mia: 10, arbaamia: 40, baloot: 2 };
   return points[project.type];
 }

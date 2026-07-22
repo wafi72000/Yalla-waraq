@@ -1,4 +1,4 @@
-import { BalootMatch, HandRuleError, projectPointsOf } from "./engine.js";
+import { BalootMatch, HandRuleError } from "./engine.js";
 import { BidChoice } from "./bidding.js";
 import { DoubleLevel } from "./doubling.js";
 import { Rank } from "./models.js";

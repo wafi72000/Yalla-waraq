@@ -164,7 +164,7 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   const result = scoreHand({
     tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
     lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 4, B: 0 }, doubleMultiplier: 2,
+    buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, doubleMultiplier: 2,
   });
   check("صن دبل + مشروع يقلب النتيجة: المشتري فايز، ياخذ 60 ((26+4)×2)", [result.A, result.B, result.isDefeat], [60, 0, false]);
 }
@@ -199,9 +199,9 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   const result = scoreHand({
     tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
     lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 4, B: 0 },
+    buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 },
   });
-  check("صن + مشروع سرا (4): المشتري = 20 (16+4)", result.A, 20);
+  check("صن + مشروع سرا (2×2=4): المشتري = 20 (16+4)", result.A, 20);
   check("الخصم بدون مشروع = 10 (بدون تغيير)", result.B, 10);
 }
 
@@ -230,14 +230,24 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("isCapot = true", result.isCapot, true);
 }
 
+// ===== الكابوت بالصن + مشروع: مضاعفة الصن التلقائية تنطبق على المشروع بهذا الفرع كمان =====
+{
+  const result = scoreHand({
+    tricksWon: [], trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, // مشروع سرا (2 أبناط أساسية)
+  });
+  check("كابوت صن + مشروع سرا: 44+(2×2)=48 (المضاعفة التلقائية تنطبق هنا كمان)", result.A, 48);
+}
+
 // ===== الكابوت بالحكم: 25 + مشاريع =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: Suit.HEARTS, isHukm: true,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
-    buyerTeam: "A", projectPointsByTeam: { A: 40, B: 0 },
+    buyerTeam: "A", projectPointsByTeam: { A: 10, B: 0 }, // مشروع مية (10 أبناط)
   });
-  check("كابوت حكم + مشاريع: 25+40=65", result.A, 65);
+  check("كابوت حكم + مشروع مية: 25+10=35", result.A, 35);
 }
 
 // ===== الكابوت مع الدبل: (كابوت+مشاريع) × معامل =====
