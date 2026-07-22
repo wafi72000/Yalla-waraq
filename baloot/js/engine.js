@@ -376,7 +376,9 @@ export class BalootMatch {
 
 /// نقاط المشاريع بمقياس "الأبناط" الأساسي (نفس مقياس البلوت: 2) - هذا هو المقياس اللي يتوقعه scoreHand
 /// (يضربه بمضاعف النظام: ×1 حكم، ×2 صن - مو القيم الخام التقليدية 20/50/100/400)
+/// ⚠️ الأربعمية استثناء: قيمتها النهائية 40 ثابتة (صن فقط أصلاً، ما تتضاعف فوق ذلك) - نمرر 20 هنا
+/// عشان ×2 (مضاعف الصن، دايماً ينطبق لأنها ما تصير إلا بالصن) يعطي 40 بالضبط
 export function projectPointsOf(project) {
-  const points = { sira: 2, khamseen: 5, mia: 10, arbaamia: 40, baloot: 2 };
+  const points = { sira: 2, khamseen: 5, mia: 10, arbaamia: 20, baloot: 2 };
   return points[project.type];
 }

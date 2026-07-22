@@ -688,7 +688,14 @@ function renderProjectsCheckMenu() {
   const types = match?.isHukm
     ? [ProjectType.SIRA, ProjectType.KHAMSEEN, ProjectType.MIA]
     : [ProjectType.SIRA, ProjectType.KHAMSEEN, ProjectType.MIA, ProjectType.ARBAAMIA];
-  const points = { [ProjectType.SIRA]: 20, [ProjectType.KHAMSEEN]: 50, [ProjectType.MIA]: 100, [ProjectType.ARBAAMIA]: 400 };
+  // القيمة النهائية الفعلية اللي بتُضاف (بعد مضاعفة الصن التلقائية) - مو الرقم الخام التقليدي
+  const sysMult = match?.isHukm ? 1 : 2;
+  const points = {
+    [ProjectType.SIRA]: 2 * sysMult,
+    [ProjectType.KHAMSEEN]: 5 * sysMult,
+    [ProjectType.MIA]: 10 * sysMult,
+    [ProjectType.ARBAAMIA]: 40, // ثابتة دايماً - صن فقط أصلاً، ما تتضاعف فوق الـ40
+  };
   for (const type of types) {
     const btn = document.createElement("button");
     btn.className = "chat-phrase-btn";

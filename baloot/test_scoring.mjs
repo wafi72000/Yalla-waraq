@@ -272,6 +272,17 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("B خسر كل شي بس يحتفظ ببلوت (2) رغم الكابوت ضده", result.B, 2);
 }
 
+// ===== الأربعمية: قيمتها النهائية 40 ثابتة - استثناء من مضاعفة الصن التلقائية (بقية المشاريع تتضاعف، هي لا) =====
+{
+  const { buyerCards, opponentCards } = buildScenario(null, 66);
+  const result = scoreHand({
+    tricksWon: buildTricks(buyerCards, opponentCards), trumpSuit: null, isHukm: false,
+    lastTrickWinnerTeam: "A", capotTeam: null, teamOfPlayer,
+    buyerTeam: "A", projectPointsByTeam: { A: 20, B: 0 }, // قيمة projectPointsOf(أربعمية) = 20
+  });
+  check("أربعمية: المشتري = 56 (16+40، مو 16+80)", result.A, 56);
+}
+
 // ===== breakdown: يظهر بالتفاصيل الصحيحة =====
 {
   const { buyerCards, opponentCards } = buildScenario(null, 66);
