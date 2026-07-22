@@ -166,6 +166,7 @@ html, body {
   font-weight: bold;
   white-space: nowrap;
 }
+.buyer-badge.hidden { display: none; }
 
 /* ===== مروحة الورق - تحيط بصورة اللاعب مباشرة، موجّهة نحو الطاولة ===== */
 .avatar-wrap {
