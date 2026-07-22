@@ -584,29 +584,36 @@ function renderOverlays() {
     const oppTeam = humanTeam === "A" ? "B" : "A";
     const usThem = (team) => (team === humanTeam ? "لنا" : "لهم");
 
-    $("handEndTitle").textContent = r.isCapot ? "كابوت!" : r.isDefeat ? "خسران!" : "انتهت اليد";
+    $("handEndTitle").textContent = r.isCapot ? "كبوت!" : r.isDefeat ? "خسران!" : "انتهت اليد";
     $("handEndDetails").textContent = `لنا: ${r.A} — لهم: ${r.B}`;
 
     const rows = [];
+    rows.push(`<tr><th></th><th>لنا</th><th>لهم</th></tr>`);
     if (r.isCapot && b.capotTeam) {
-      rows.push(`<tr><td>كابوت (${usThem(b.capotTeam)})</td><td>${b.capotBasePoints} نقطة</td></tr>`);
+      rows.push(`<tr><td>كبوت</td><td>${usThem(b.capotTeam) === "لنا" ? b.capotBasePoints : "—"}</td><td>${usThem(b.capotTeam) === "لهم" ? b.capotBasePoints : "—"}</td></tr>`);
     } else if (b.cardPointsRaw) {
-      rows.push(`<tr><td>الأبناط (لنا)</td><td>${b.cardPointsRaw[humanTeam] ?? 0}</td></tr>`);
-      rows.push(`<tr><td>الأبناط (لهم)</td><td>${b.cardPointsRaw[oppTeam] ?? 0}</td></tr>`);
-      if (b.lastTrickTeam) {
-        rows.push(`<tr><td>آخر أكلة (الأرض)</td><td>${usThem(b.lastTrickTeam)} +${b.lastTrickBonus}</td></tr>`);
-      }
+      const humanIsBuyer = humanTeam === match.buyerTeam;
+      const humanAbnat = humanIsBuyer ? b.buyerAbnat : b.opponentAbnat;
+      const oppAbnat = humanIsBuyer ? b.opponentAbnat : b.buyerAbnat;
+      rows.push(`<tr><td>البنط (الورق)</td><td>${b.cardPointsRaw[humanTeam] ?? 0}</td><td>${b.cardPointsRaw[oppTeam] ?? 0}</td></tr>`);
+      rows.push(`<tr><td>الأرضية (آخر أكلة)</td><td>${b.lastTrickTeam === humanTeam ? `+${b.lastTrickBonus}` : "—"}</td><td>${b.lastTrickTeam === oppTeam ? `+${b.lastTrickBonus}` : "—"}</td></tr>`);
+      rows.push(`<tr><td>مجموع الأبناط</td><td>${humanAbnat ?? "—"}</td><td>${oppAbnat ?? "—"}</td></tr>`);
     }
     if (b.projectPointsByTeam) {
-      const winningTeam = b.projectPointsByTeam.A > 0 ? "A" : b.projectPointsByTeam.B > 0 ? "B" : null;
-      if (winningTeam) {
-        rows.push(`<tr><td>المشاريع</td><td>${usThem(winningTeam)} +${b.projectPointsByTeam[winningTeam]}</td></tr>`);
+      const projA = b.projectPointsByTeam[humanTeam] ?? 0;
+      const projB = b.projectPointsByTeam[oppTeam] ?? 0;
+      if (projA > 0 || projB > 0) {
+        rows.push(`<tr><td>المشاريع</td><td>${projA > 0 ? `+${projA}` : "—"}</td><td>${projB > 0 ? `+${projB}` : "—"}</td></tr>`);
       }
     }
-    if (b.balootPointsByTeam?.[humanTeam]) rows.push(`<tr><td>بلوت (لنا)</td><td>+${b.balootPointsByTeam[humanTeam]}</td></tr>`);
-    if (b.balootPointsByTeam?.[oppTeam]) rows.push(`<tr><td>بلوت (لهم)</td><td>+${b.balootPointsByTeam[oppTeam]}</td></tr>`);
-    if (b.doubleMultiplier > 1) rows.push(`<tr><td>معامل الدبل</td><td>×${b.doubleMultiplier}</td></tr>`);
-    rows.push(`<tr><td>المجموع التراكمي</td><td>لنا ${match.cumulativeScores.A} — لهم ${match.cumulativeScores.B}</td></tr>`);
+    const balootA = b.balootPointsByTeam?.[humanTeam] ?? 0;
+    const balootB = b.balootPointsByTeam?.[oppTeam] ?? 0;
+    if (balootA > 0 || balootB > 0) {
+      rows.push(`<tr><td>بلوت</td><td>${balootA > 0 ? `+${balootA}` : "—"}</td><td>${balootB > 0 ? `+${balootB}` : "—"}</td></tr>`);
+    }
+    if (b.doubleMultiplier > 1) rows.push(`<tr><td>معامل الدبل</td><td colspan="2">×${b.doubleMultiplier}</td></tr>`);
+    rows.push(`<tr class="score-table-final"><td>النتيجة النهائية</td><td>${r.A}</td><td>${r.B}</td></tr>`);
+    rows.push(`<tr><td>المجموع التراكمي</td><td>${match.cumulativeScores.A}</td><td>${match.cumulativeScores.B}</td></tr>`);
 
     $("handEndScoreTable").innerHTML = rows.join("");
   }

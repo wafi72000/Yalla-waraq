@@ -475,7 +475,10 @@ html, body {
   cursor: pointer;
 }
 .score-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
-.score-table td { padding: 4px 8px; border-bottom: 1px solid rgba(243,210,122,0.2); }
+.score-table td { padding: 4px 8px; border-bottom: 1px solid rgba(243,210,122,0.2); text-align: center; }
+.score-table td:first-child { text-align: right; color: var(--gold-light); }
+.score-table th { padding: 4px 8px; color: var(--gold); font-family: 'Aref Ruqaa', serif; text-align: center; }
+.score-table tr.score-table-final td { font-weight: 700; color: var(--gold-light); border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); }
 
 .scoreboard-big { display: flex; justify-content: center; gap: 30px; margin: 14px 0; }
 .scoreboard-team { text-align: center; }

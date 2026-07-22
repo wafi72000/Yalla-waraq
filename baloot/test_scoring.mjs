@@ -218,49 +218,49 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("المشتري صفر رغم مشروعه الخاص", result.A, 0);
 }
 
-// ===== الكابوت بالصن: 44 نقطة للفائز، صفر للخصم =====
+// ===== الكبوت بالصن: 44 نقطة للفائز، صفر للخصم =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: null, isHukm: false,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
   });
-  check("كابوت صن: الفائز = 44", result.A, 44);
-  check("كابوت: الخصم = صفر", result.B, 0);
+  check("كبوت صن: الفائز = 44", result.A, 44);
+  check("كبوت: الخصم = صفر", result.B, 0);
   check("isCapot = true", result.isCapot, true);
 }
 
-// ===== الكابوت بالصن + مشروع: مضاعفة الصن التلقائية تنطبق على المشروع بهذا الفرع كمان =====
+// ===== الكبوت بالصن + مشروع: مضاعفة الصن التلقائية تنطبق على المشروع بهذا الفرع كمان =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: null, isHukm: false,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, // مشروع سرا (2 أبناط أساسية)
   });
-  check("كابوت صن + مشروع سرا: 44+(2×2)=48 (المضاعفة التلقائية تنطبق هنا كمان)", result.A, 48);
+  check("كبوت صن + مشروع سرا: 44+(2×2)=48 (المضاعفة التلقائية تنطبق هنا كمان)", result.A, 48);
 }
 
-// ===== الكابوت بالحكم: 25 + مشاريع =====
+// ===== الكبوت بالحكم: 25 + مشاريع =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: Suit.HEARTS, isHukm: true,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 10, B: 0 }, // مشروع مية (10 أبناط)
   });
-  check("كابوت حكم + مشروع مية: 25+10=35", result.A, 35);
+  check("كبوت حكم + مشروع مية: 25+10=35", result.A, 35);
 }
 
-// ===== الكابوت مع الدبل: (كابوت+مشاريع) × معامل =====
+// ===== الكبوت مع الدبل: (كبوت+مشاريع) × معامل =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: Suit.HEARTS, isHukm: true,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 2, B: 0 }, doubleMultiplier: 2,
   });
-  check("كابوت حكم مضاعف: (25+2)×2=54", result.A, 54);
+  check("كبوت حكم مضاعف: (25+2)×2=54", result.A, 54);
 }
 
-// ===== البلوت محمي حتى مع الكابوت ضد صاحبه =====
+// ===== البلوت محمي حتى مع الكبوت ضد صاحبه =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: Suit.HEARTS, isHukm: true,
@@ -268,8 +268,8 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
     buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
     balootPointsByTeam: { A: 0, B: 2 },
   });
-  check("كابوت لصالح A: A = 25 (بدون بلوت)", result.A, 25);
-  check("B خسر كل شي بس يحتفظ ببلوت (2) رغم الكابوت ضده", result.B, 2);
+  check("كبوت لصالح A: A = 25 (بدون بلوت)", result.A, 25);
+  check("B خسر كل شي بس يحتفظ ببلوت (2) رغم الكبوت ضده", result.B, 2);
 }
 
 // ===== الأربعمية: قيمتها النهائية 40 ثابتة - استثناء من مضاعفة الصن التلقائية (بقية المشاريع تتضاعف، هي لا) =====
@@ -298,16 +298,16 @@ function buildScenario(trumpSuit, buyerRawBeforeLastTrick) {
   check("breakdown.buyerAbnat/opponentAbnat موجودة (8، 5)", [result.breakdown.buyerAbnat, result.breakdown.opponentAbnat], [8, 5]);
 }
 
-// ===== breakdown بحالة الكابوت =====
+// ===== breakdown بحالة الكبوت =====
 {
   const result = scoreHand({
     tricksWon: [], trumpSuit: Suit.HEARTS, isHukm: true,
     lastTrickWinnerTeam: "A", capotTeam: "A", teamOfPlayer,
     buyerTeam: "A", projectPointsByTeam: { A: 0, B: 0 },
   });
-  check("breakdown.capotTeam يطابق الفريق الكابوت", result.breakdown.capotTeam, "A");
-  check("breakdown.capotBasePoints يطابق قيمة الكابوت بالحكم (25)", result.breakdown.capotBasePoints, 25);
-  check("breakdown.cardPointsRaw موجودة حتى بالكابوت", typeof result.breakdown.cardPointsRaw, "object");
+  check("breakdown.capotTeam يطابق الفريق الكبوت", result.breakdown.capotTeam, "A");
+  check("breakdown.capotBasePoints يطابق قيمة الكبوت بالحكم (25)", result.breakdown.capotBasePoints, 25);
+  check("breakdown.cardPointsRaw موجودة حتى بالكبوت", typeof result.breakdown.cardPointsRaw, "object");
 }
 
 // ===== تصحيح مهم: المقارنة بالخام مباشرة تمنع "منطقة تعادل مصطنعة" من التقريب =====
