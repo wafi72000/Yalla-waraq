@@ -1,0 +1,13 @@
+{
+  "name": "yalla-waraq-baloot",
+  "version": "1.0.0",
+  "description": "لعبة بلوت كاملة (Vanilla JS) - جزء من منصة يلا ورق",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run_tests.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

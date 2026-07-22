@@ -1,96 +1,21 @@
 import { BalootMatch, HandRuleError, projectPointsOf } from "./engine.js";
 import { BidChoice } from "./bidding.js";
 import { DoubleLevel } from "./doubling.js";
-import { Suit, Rank, rankDisplayName } from "./models.js";
+import { Rank } from "./models.js";
 import { ProjectType, detectBestProject } from "./projects.js";
-import { aiDecideBid, aiChooseCard, aiDecideDouble } from "./ai.js";
 import { computeRawCardPoints } from "./scoring.js";
 import { speak, BID_SPEECH, PROJECT_SPEECH } from "./speech.js";
 import { sounds } from "./sounds.js";
-
-const HUMAN_ID = "human";
-// ترتيب فيزيائي بعقارب الساعة: أنت(أسفل) -> سالم(يسار) -> خالد(فوق، شريكك) -> فهد(يمين) -> رجوع لك
-const baseSeatOrder = [HUMAN_ID, "salem", "khaled", "fahad"];
-const teamOfPlayer = (id) => (id === HUMAN_ID || id === "khaled") ? "A" : "B";
-const AI_IDS = ["salem", "khaled", "fahad"];
-
-const SUIT_SYMBOL = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
-const SEAT_ELEMENT_ID = { salem: "seatLeft", khaled: "seatTop", fahad: "seatRight" };
-const SEAT_TRICK_POS = { human: "bottom", salem: "left", khaled: "top", fahad: "right" };
-
-let match = null;
+import { SUIT_SYMBOL, suitIsRed, preloadCardImages, cardDisplay } from "./cards.js";
+import { HUMAN_ID, baseSeatOrder, teamOfPlayer, AI_IDS, SEAT_ELEMENT_ID, SEAT_TRICK_POS, displayName } from "./seats.js";
+import { match, setMatch } from "./state.js";
+import { maybeRunAI } from "./ai-scheduler.js";
 
 function $(id) { return document.getElementById(id); }
 
-function suitIsRed(suit) { return suit === Suit.HEARTS || suit === Suit.DIAMONDS; }
-
-const FACE_SUIT_NAME = { hearts: "heart", diamonds: "diamond", clubs: "club", spades: "spade" };
-const RANK_FILE_NAME = { 11: "jack", 12: "queen", 13: "king", 14: "1" }; // الأص بترقيم ملفات SVG المصدر = 1
-
-function cardImagePath(card) {
-  const rankPart = RANK_FILE_NAME[card.rank] ?? String(card.rank);
-  return `assets/faces/${FACE_SUIT_NAME[card.suit]}_${rankPart}.svg`;
-}
-
-/// تحميل مسبق لكل صور الورق الـ32 فور تحميل الصفحة (قبل حتى ما يضغط "ابدأ") - يملأ كاش المتصفح
-/// مبكراً فيقل احتمال ظهور ورقة فاضية بسبب بطء/انقطاع الشبكة وقت اللعب الفعلي نفسه
-function preloadCardImages() {
-  for (const suit of Object.values(Suit)) {
-    for (const rank of [7, 8, 9, 10, 11, 12, 13, 14]) {
-      const img = document.createElement("img");
-      img.src = cardImagePath({ suit, rank });
-    }
-  }
-}
 preloadCardImages();
 
-const RANK_SHORT_LABEL = { 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K", 14: "A" };
 
-/// بديل نصي موثوق 100% (بدون أي طلب شبكة) - يُستخدم بس لو صورة SVG فشلت تحميلها لأي سبب،
-/// عشان الورقة ما تظهر فاضية أبداً بغض النظر عن حالة الشبكة
-function buildFallbackCardFace(card, container) {
-  container.classList.remove("card-image");
-  container.classList.add("card-fallback");
-  container.innerHTML = "";
-  const isRed = suitIsRed(card.suit);
-  const rankLabel = RANK_SHORT_LABEL[card.rank] ?? String(card.rank);
-  const suitSymbol = SUIT_SYMBOL[card.suit];
-  const color = isRed ? "#c0392b" : "#1a1a1a";
-  const corner = (rot) => {
-    const el = document.createElement("div");
-    el.className = "fallback-corner";
-    el.style.color = color;
-    el.style.transform = rot ? "rotate(180deg)" : "";
-    el.innerHTML = `<div>${rankLabel}</div><div>${suitSymbol}</div>`;
-    return el;
-  };
-  const center = document.createElement("div");
-  center.className = "fallback-center-suit";
-  center.style.color = color;
-  center.textContent = suitSymbol;
-  container.appendChild(corner(false));
-  container.appendChild(center);
-  container.appendChild(corner(true));
-}
-
-function cardDisplay(card) {
-  const div = document.createElement("div");
-  div.className = "card card-image"; // رسمة حقيقية بدل النص - تمييز أوضح بكثير من الأرقام والحروف
-  div.dataset.cardId = card.id;
-  const img = document.createElement("img");
-  img.src = cardImagePath(card);
-  img.alt = `${rankDisplayName(card.rank)} ${SUIT_SYMBOL[card.suit]}`;
-  img.draggable = false;
-  img.onerror = () => buildFallbackCardFace(card, div); // فشل تحميل الصورة (شبكة) - نبدّلها ببديل نصي فوراً
-  div.appendChild(img);
-  return div;
-}
-
-function displayName(id) {
-  if (id === HUMAN_ID) return "أنت";
-  const names = { salem: "سالم", khaled: "خالد", fahad: "فهد" };
-  return names[id] ?? id;
-}
 
 /// ينطق "أول" أو "ثاني" أول ما تبدأ/تنتقل جولة مزايدة جديدة - مرة وحدة بس لكل جولة (يتتبع آخر جولة نُطقت)
 function announceBiddingRoundIfNew() {
@@ -102,7 +27,7 @@ function announceBiddingRoundIfNew() {
 }
 
 function newMatch() {
-  match = new BalootMatch(baseSeatOrder, teamOfPlayer);
+  setMatch(new BalootMatch(baseSeatOrder, teamOfPlayer));
   balootAnnounceActive = false;
   match._projectsRevealed = false;
   match._lastAnnouncedTurnKey = null;
@@ -112,7 +37,7 @@ function newMatch() {
 }
 
 /// أنيميشن تزييني (بصري+صوتي) لتوزيع الورق ببداية كل يد - كل ورقة تطير من منتصف الطاولة نحو مقعدها
-function playDealingAnimation() {
+export function playDealingAnimation() {
   const layer = $("dealFxLayer");
   if (!layer) return;
   const tableRect = $("tableArea")?.getBoundingClientRect();
@@ -156,7 +81,7 @@ function playDealingAnimation() {
   }
 }
 
-function showToast(message) {
+export function showToast(message) {
   const toast = $("toast");
   toast.textContent = message;
   toast.classList.add("show");
@@ -172,7 +97,7 @@ function safeRender(fn) {
   try { fn(); } catch (e) { console.error(`[render] ${fn.name || "anonymous"} فشلت:`, e); }
 }
 
-function render() {
+export function render() {
   $("startOverlay").classList.toggle("hidden", !!match);
   if (!match) return;
   safeRender(renderScores);
@@ -384,7 +309,7 @@ function onHumanBid(choice) {
 }
 
 /// ينطق قرار مزايدة معيّن، مراعياً الفرق حسب الجولة (حكم أول/ثاني، بس/ولا)
-function speakBidChoice(choice, round) {
+export function speakBidChoice(choice, round) {
   const map = {
     [BidChoice.SUN]: BID_SPEECH.SUN,
     [BidChoice.ASHKAL]: BID_SPEECH.ASHKAL,
@@ -818,9 +743,6 @@ $("homeBtn").addEventListener("click", (e) => {
 $("closeScoreboardBtn").addEventListener("click", () => $("scoreboardOverlay").classList.add("hidden"));
 
 // سرعة لعب الـAI الموحّدة - متوسطة، تعطي وقت كافي لملاحظة الورقة المفروشة وآخر ورقة تُلعب
-const AI_BID_DELAY_MS = 1200;    // قرار مزايدة (كان 500 - سريع جداً، يصعّب متابعة الورقة المفروشة)
-const AI_DOUBLE_DELAY_MS = 1200; // قرار دبل/دبل صن (كان 700)
-const AI_PLAY_DELAY_MS = 1400;   // رمي ورقة أثناء اللعب (كان 1200)
 const TRICK_PAUSE_MS = 3000;     // وقفة كافية يشوف فيها كل اللاعبين الشوط كامل (بما فيها ورقة آخر لاعب) قبل ما ينكسح (كانت 2500)
 
 /// كل لاعب معه مشروع يعلنه بفقاعة كلام فوق صورته + صوت - بترتيب متتابع (900ms بينهم) عشان الأصوات ما تتقاطع
@@ -867,7 +789,7 @@ function revealWinningProjectCards(entry) {
   }, 3200);
 }
 
-function afterAction() {
+export function afterAction() {
   render();
   if (match.phase === "playing" && match.tricksWon.length === 0 && !match.projectsResolved) {
     match.resolveProjects();
@@ -929,144 +851,5 @@ function animateTrickCollection(winnerID) {
 }
 
 // ===== حلقة الذكاء الاصطناعي =====
-
-function announceAIBid(playerID, choice, round) {
-  const name = displayName(playerID);
-  speakBidChoice(choice, round);
-  if (choice === BidChoice.PASS) {
-    showToast(`${name}: ${round === 2 ? "ولا" : "بس"}`);
-    return;
-  }
-  const labels = { [BidChoice.SUN]: "صن", [BidChoice.ASHKAL]: "اشكل", [BidChoice.HUKM]: "حكم" };
-  showToast(`${name} اشترى ${labels[choice]}!`);
-}
-
-let aiActionPending = false; // يمنع جدولة أكثر من setTimeout واحد لإجراء AI بنفس الوقت - حماية من سباقات نادرة
-
-function maybeRunAI() {
-  if (!match || match.matchOver) return;
-  if (match.completedTrick) return; // شوط لسه ينتظر يُكسح - ننتظر afterAction تتولى الوقفة والاستمرار
-  if (aiActionPending) return; // فيه إجراء AI مجدول أصلاً بانتظار وقته - ما نجدول وحد ثاني فوقه
-
-  if (match.phase === "bidding" && !match.bidding.isDead) {
-    const current = match.bidding.currentPlayerID;
-    if (AI_IDS.includes(current)) {
-      aiActionPending = true;
-      setTimeout(() => {
-        aiActionPending = false;
-        if (match.phase !== "bidding") return;
-        const hand = match.hands.get(current);
-        const choices = match.bidding.availableChoices();
-        const flippedSuit = match.flippedCard.suit;
-        const decision = aiDecideBid(hand, choices, flippedSuit, match.bidding.round);
-        const roundBefore = match.bidding.round;
-        try {
-          match.submitBid(current, decision.choice, decision.trumpSuitForHukm);
-          announceAIBid(current, decision.choice, roundBefore);
-        } catch (e) {
-          try { match.submitBid(current, BidChoice.PASS); } catch (e2) { console.error("[AI bid]", e2); }
-        }
-        afterAction();
-      }, AI_BID_DELAY_MS);
-    }
-    return;
-  }
-
-  if (match.bidding?.isDead && match.phase === "dead") {
-    aiActionPending = true;
-    setTimeout(() => {
-      aiActionPending = false;
-      if (match.phase !== "dead") return;
-      match.advanceToNextHand();
-      match._lastSpokenRound = null;
-      match._projectsRevealed = false;
-      match._lastAnnouncedTurnKey = null;
-      render();
-      playDealingAnimation();
-      maybeRunAI();
-    }, 1200);
-    return;
-  }
-
-  if (match.phase === "doubling") {
-    const teamToAct = match.doubling.teamToActNext;
-    const humanTeam = teamOfPlayer(HUMAN_ID);
-    if (teamToAct !== humanTeam) {
-      // دور فريق AI بالكامل (سالم وفهد) - يقرر تلقائياً
-      aiActionPending = true;
-      setTimeout(() => {
-        aiActionPending = false;
-        if (match.phase !== "doubling") return;
-        const aiMemberID = AI_IDS.find((id) => teamOfPlayer(id) === teamToAct);
-        const hand = match.hands.get(aiMemberID);
-        const role = teamToAct === match.opponentTeam ? "opponent" : "buyer";
-        const wantsToDouble = aiDecideDouble(hand, match.trumpSuit, match.doubling.level, role, match.cumulativeScores, teamToAct);
-        try {
-          if (wantsToDouble) {
-            const levelNamesAI = ["", "دبل", "ثري", "فور", "خمسة"];
-            const spokenLevel = levelNamesAI[match.doubling.level + 1];
-            match.requestDouble(teamToAct);
-            speak(spokenLevel);
-            afterAction();
-          } else {
-            match.proceedToPlay();
-            afterAction();
-          }
-        } catch (e) {
-          match.proceedToPlay();
-          afterAction();
-        }
-      }, AI_DOUBLE_DELAY_MS);
-    }
-    // لو دور فريق الإنسان، ننتظر تفاعله عبر renderDoublingBar (ما نسوي شي هنا)
-    return;
-  }
-
-  if (match.phase === "sunDoubling") {
-    const humanTeam = teamOfPlayer(HUMAN_ID);
-    if (match.opponentTeam !== humanTeam) {
-      // فريق AI هو الخصم - يقرر تلقائياً (معيار بسيط: يدبل لو متأخر بوضوح، غير كذا يلعب عادي)
-      aiActionPending = true;
-      setTimeout(() => {
-        aiActionPending = false;
-        if (match.phase !== "sunDoubling") return;
-        const myScore = match.cumulativeScores[match.opponentTeam];
-        const theirScore = match.cumulativeScores[match.buyerTeam];
-        const desperate = theirScore - myScore >= 100; // نفس معيار الجرأة بالحكم - نجازف لو متأخرين جداً
-        try {
-          match.decideSunDouble(match.opponentTeam, desperate);
-          if (desperate) speak(BID_SPEECH.DOUBLE);
-          afterAction();
-        } catch (e) {
-          console.error("[AI sunDouble]", e);
-        }
-      }, AI_DOUBLE_DELAY_MS);
-    }
-    // لو دور فريق الإنسان (هو الخصم)، ننتظر تفاعله عبر renderSunDoublingBar
-    return;
-  }
-
-  if (match.phase === "playing" && AI_IDS.includes(match.turnPlayerID)) {
-    aiActionPending = true;
-    setTimeout(() => {
-      aiActionPending = false;
-      if (match.phase !== "playing") return;
-      const playerID = match.turnPlayerID;
-      const hand = match.hands.get(playerID);
-      const isBuyerTeam = match.teamOfPlayer(playerID) === match.buyerTeam;
-      const card = aiChooseCard(hand, match.currentTrick, match.trumpSuit, match.partnerOfID, playerID, match.tricksWon, isBuyerTeam);
-      if (card) {
-        try {
-          match.playCard(playerID, card, false);
-          sounds.playCard();
-        } catch (e) {
-          console.error("[AI] playCard unexpected:", e);
-        }
-      }
-      afterAction();
-    }, AI_PLAY_DELAY_MS);
-    return;
-  }
-}
 
 render();
