@@ -280,7 +280,7 @@ html, body {
 /* ===== الطاولة ===== */
 .table-area {
   flex-shrink: 1;
-  height: clamp(220px, 38dvh, 350px); /* يتقلّص تلقائياً بالشاشات القصيرة - fitAllMeldZones تتكيّف معه */
+  max-height: clamp(180px, 34dvh, 350px); /* حد أقصى بس - الحجم الفعلي من المحتوى، ما يحجز فراغ فاضي لو الميلدات فاضية */
   margin: 0 10px;
   display: flex;
   flex-direction: column;
@@ -289,6 +289,7 @@ html, body {
   border-radius: var(--radius);
   padding: 6px;
   border: 1px solid rgba(243,210,122,0.15);
+  overflow: hidden; /* حماية أخيرة - لو المحتوى تجاوز الحد الأقصى لأي سبب، يُقص بدل ما يفرض سحب بالصفحة */
 }
 
 /* بيرات خالد (فوق) وبيرات أنت (تحت) - أفقية، كل واحدة بمكانها بالضبط أمام اللاعب */
@@ -298,7 +299,7 @@ html, body {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 6px;
-  height: 100px;
+  max-height: 100px; /* حد أقصى بس - الحجم الفعلي من المحتوى، يمنع حجز مساحة فاضية لو الميلد صغير */
   overflow: visible; /* التحجيم JS يضمن المحتوى يتسع - مفيش قص */
 }
 .melds-top:empty, .melds-bottom:empty { display: none; height: 0; }

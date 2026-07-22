@@ -62,15 +62,22 @@ function fitMeldZone(containerId, maxHeight, minScale = 0.45) {
   el.style.height = `${natural * scale}px`;
 }
 function fitAllMeldZones() {
-  // نقيس الارتفاع الفعلي المتاح بدل أرقام ثابتة (350/130) - عشان يتكيّف صح مع .table-area المرنة (clamp)
-  // على أي حجم شاشة، بدل ما يفترض حجم واحد بس كان مضبوط عليه قديماً
-  const tableArea = $("tableArea");
+  // نقيس المساحة المتاحة فعلياً من .stage (بدل .table-area نفسها - قياسها مباشرة كان دائري
+  // بما إنها صارت تاخذ حجمها من محتواها هي بالذات). نطرح ارتفاع مقاعد الخصوم والحد الأدنى ليدّك
+  // والفراغات، والباقي هو ميزانية .table-area الفعلية المتاحة بدون ما تفرض سحب بالصفحة
+  const stage = $("stage");
+  const tableLayout = document.querySelector(".table-layout");
+  const handRows = $("handRows");
   const middleRow = $("tableMiddleRow");
-  const middleRowHeight = middleRow?.getBoundingClientRect().height || 130;
-  const tableAreaHeight = tableArea?.getBoundingClientRect().height || 350;
-  // الميزانية المتبقية بعد صف الأكوام الأوسط والـgap والـpadding الداخلية (تُقسم بالتساوي بين فوق وتحت)
-  const remaining = Math.max(60, tableAreaHeight - middleRowHeight - 20);
-  const topBottomBudget = remaining / 2;
+
+  const stageHeight = stage?.getBoundingClientRect().height || 460;
+  const tableLayoutHeight = tableLayout?.getBoundingClientRect().height || 100;
+  const handRowsMinHeight = handRows ? parseFloat(window.getComputedStyle(handRows).minHeight) || 150 : 150;
+  const gaps = 12; // 3 فراغات 4px بين مقاعد الخصوم/الطاولة/يدّك داخل .stage
+  const middleRowHeight = middleRow?.getBoundingClientRect().height || 110;
+
+  const tableAreaBudget = Math.max(140, stageHeight - tableLayoutHeight - handRowsMinHeight - gaps);
+  const topBottomBudget = Math.max(30, (tableAreaBudget - middleRowHeight - 20) / 2);
 
   fitMeldZone("meldsTop", topBottomBudget);
   fitMeldZone("meldsBottom", topBottomBudget);
