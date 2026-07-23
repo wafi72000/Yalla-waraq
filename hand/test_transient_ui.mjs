@@ -24,7 +24,7 @@ while (window.__engine.state.currentTurnPlayerID !== "human" && waited < 15000) 
   waited += 50;
 }
 
-check("بدورك: شريط الأزرار ظاهر (visibility)", document.getElementById("actionBar").style.visibility, "visible");
+check("بدورك: البنر نفسه ظاهر دايماً (بدون visibility hidden)", document.getElementById("actionBar").style.visibility, "");
 check("بدون تحديد: صندوق المجموع بدون كلاس show", document.getElementById("totalPointsBar").classList.contains("show"), false);
 check("بدون سحب: زر نزول مخفي (ما سحبت بعد)", document.getElementById("btnDeclare").style.display, "none");
 check("بدون سحب: زر هند مخفي", document.getElementById("btnHand").style.display, "none");
@@ -47,8 +47,8 @@ dispatchPointer(card, "pointerdown", { x: 10, y: 10 });
 dispatchPointer(card, "pointerup", { x: 10, y: 10 });
 await new Promise((r) => setTimeout(r, 10));
 
-check("بدور الخصم: شريط الأزرار غير ظاهر بصرياً (visibility hidden)، مش display none", document.getElementById("actionBar").style.visibility, "hidden");
-check("بدور الخصم: شريط الأزرار لسه محجوز مساحته بالتخطيط (display مش none)", document.getElementById("actionBar").style.display !== "none", true);
+check("بدور الخصم: البنر نفسه يبقى ظاهر بصرياً دايماً (ثابت، مو يختفي)", document.getElementById("actionBar").style.visibility, "");
+check("بدور الخصم: زر نزول مخفي فردياً (display none)", document.getElementById("btnDeclare").style.display, "none");
 
 console.log(`\n— النتيجة: ${pass} ناجح، ${fail} فاشل —`);
 process.exit(fail > 0 ? 1 : 0);

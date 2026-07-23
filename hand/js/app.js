@@ -617,15 +617,16 @@ function previewEndingTier(type, sel, remainingHand) {
 
 function renderActionBar() {
   const s = engine.state;
-  const actionBar = $("actionBar");
   const totalBar = $("totalPointsBar");
 
   if (!isHumanTurn()) {
-    actionBar.style.visibility = "hidden";
+    // البنر (الإطار/الخلفية) يبقى ثابت ظاهر دايماً - نخفي الأزرار الفردية بس وقت دور الخصم
+    for (const id of ["btnUndoNar", "btnDeclare", "btnHand", "btnKhales", "btnColor", "btnQarinq"]) {
+      $(id).style.display = "none";
+    }
     totalBar.classList.remove("show");
     return;
   }
-  actionBar.style.visibility = "visible";
 
   const drawnAndTurn = s.hasDrawnThisTurn;
   const tookFire = s.lastDrawSource === DrawSource.LEFT_DISCARD; // شرط النزول/الخالص

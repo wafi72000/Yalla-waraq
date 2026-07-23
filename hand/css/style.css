@@ -540,9 +540,9 @@ html, body {
   min-height: 150px; /* صفين ورق + فراغات - حد أدنى يحمي يدّك من الانضغاط الزايد (كان 200، قلّلناه ليفضل مجال أكبر بالشاشات القصيرة) */
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end; /* يدّك تلتصق بالبنر تحتها (كانت center تسيب فراغ فاضي بينهم) - أي فراغ زائد يروح فوق يدّك بدل تحتها */
   gap: 6px;
-  padding: 10px 6px 6px;
+  padding: 6px 6px 4px;
 }
 .hand-row {
   display: flex;
