@@ -541,8 +541,18 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end; /* يدّك تلتصق بالبنر تحتها (كانت center تسيب فراغ فاضي بينهم) - أي فراغ زائد يروح فوق يدّك بدل تحتها */
-  gap: 6px;
+  gap: 0; /* التراكب بين الصفين يصير عبر margin مباشرة تحت - مو gap */
   padding: 6px 6px 4px;
+}
+.hand-row:first-child {
+  position: relative;
+  z-index: 1; /* تحت الصف الثاني - ثلث ورقه يختفي تحته (اقتراح وافي لتوفير مساحة) */
+  margin-bottom: -30px; /* ~ثلث ارتفاع الورقة (92px) */
+}
+#handRowBottom {
+  position: relative;
+  z-index: 2; /* فوق الصف الأول، تحت البنر السفلي */
+  margin-bottom: -30px; /* ~ثلث ارتفاع الورقة - يختفي تحت البنر السفلي */
 }
 .hand-row {
   display: flex;
@@ -608,6 +618,8 @@ html, body {
 
 .action-bar {
   flex-shrink: 0;
+  position: relative;
+  z-index: 3; /* فوق صف اليد الثاني المتراكب تحته (z-index:2) */
   display: flex;
   gap: 6px;
   justify-content: center;

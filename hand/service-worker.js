@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v92"; // v92: البنر السفلي ثابت دايماً + يدّك تلتصق بالبنر
+const CACHE_NAME = "hand-game-v93"; // v93: تكديس صفي اليد (ثلث كل صف يختفي تحت اللي بعده) لتوفير مساحة
 const ASSETS = [
   "./index.html",
   "./manifest.json",
