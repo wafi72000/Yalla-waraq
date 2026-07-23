@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v91"; // v91: table-area بحجم محتوى فعلي (مو ارتفاع مفروض) - يمنع مساحة فاضية وسحب
+const CACHE_NAME = "hand-game-v92"; // v92: البنر السفلي ثابت دايماً + يدّك تلتصق بالبنر
 const ASSETS = [
   "./index.html",
   "./manifest.json",
