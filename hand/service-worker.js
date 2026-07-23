@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v93"; // v93: تكديس صفي اليد (ثلث كل صف يختفي تحت اللي بعده) لتوفير مساحة
+const CACHE_NAME = "hand-game-v94"; // v94: صف الأكوام (الدّستة+النار) يتمركز بالمنتصف الحقيقي دايماً
 const ASSETS = [
   "./index.html",
   "./manifest.json",
