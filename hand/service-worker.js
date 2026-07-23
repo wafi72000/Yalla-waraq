@@ -1,4 +1,4 @@
-const CACHE_NAME = "hand-game-v94"; // v94: صف الأكوام (الدّستة+النار) يتمركز بالمنتصف الحقيقي دايماً
+const CACHE_NAME = "hand-game-v95"; // v95: فاصل أوضح بين البيرات + بيرات نفسك تلتصق بيدّك
 const ASSETS = [
   "./index.html",
   "./manifest.json",
